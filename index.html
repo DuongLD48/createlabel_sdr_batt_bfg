@@ -1,1132 +1,816 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Japanese Vocabulary</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#5D5CDE',
-                    }
-                }
-            },
-            darkMode: 'class',
-        }
-    </script>
-    <style>
-        body {
-            font-family: 'Nunito', sans-serif;
-            align-items: center;
-            justify-content: center;
-        }
-        .flashcard {
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
-            position: relative;
-        }
-        
-        .card-face {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 0.5rem;
-        }
-        #randomBtn{
-            visibility: hidden;
-        }
-        
-        .rotate-0 { transform: rotateY(0deg); }
-        .rotate-90 { transform: rotateY(90deg); }
-        .rotate-180 { transform: rotateY(180deg); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Label Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@latest/dist/JsBarcode.all.min.js"></script>
+<style>
+:root {
+  --bg: #0d0d0d;
+  --surface: #161616;
+  --surface2: #1f1f1f;
+  --border: #2a2a2a;
+  --accent: #e8ff00;
+  --accent2: #00ffc8;
+  --text: #f0f0f0;
+  --muted: #666;
+  --danger: #ff4444;
+  --success: #00ffc8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+}
+
+/* ===== HEADER ===== */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 100;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.logo span { color: var(--accent); }
+
+.badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+header .actions { margin-left: auto; display: flex; gap: 10px; }
+
+/* ===== BUTTONS ===== */
+.btn {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #0d0d0d;
+}
+.btn-primary:hover { background: #d4e800; transform: translateY(-1px); }
+
+.btn-secondary {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid #ff444444;
+}
+.btn-danger:hover { background: #ff44440f; }
+
+.btn-print {
+  background: var(--accent2);
+  color: #0d0d0d;
+}
+.btn-print:hover { background: #00e6b3; transform: translateY(-1px); }
+
+/* ===== MAIN LAYOUT ===== */
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px;
+}
+
+/* ===== STEP INDICATOR ===== */
+.steps {
+  display: flex;
+  gap: 0;
+  margin-bottom: 40px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.step {
+  flex: 1;
+  padding: 16px 20px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--muted);
+  border-right: 1px solid var(--border);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.step:last-child { border-right: none; }
+.step .num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.step.active { color: var(--accent); background: #e8ff0008; }
+.step.active .num { background: var(--accent); color: #0d0d0d; border-color: var(--accent); }
+.step.done { color: var(--success); }
+.step.done .num { background: var(--success); color: #0d0d0d; border-color: var(--success); }
+
+/* ===== PASTE SECTION ===== */
+#pasteSection { animation: fadeIn 0.3s ease; }
+
+.section-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  letter-spacing: -1px;
+}
+.section-title span { color: var(--accent); }
+
+.section-sub {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 30px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.col-guide {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.col-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+}
+.col-tag.req { border-color: var(--accent); color: var(--accent); }
+.col-tag .idx { color: var(--muted); margin-right: 4px; }
+
+.paste-wrapper {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.paste-hint {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  gap: 10px;
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+.paste-hint .icon { font-size: 40px; }
+.paste-hint .title { font-size: 16px; font-weight: 700; }
+.paste-hint .sub { font-size: 13px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+#pasteArea {
+  width: 100%;
+  min-height: 200px;
+  background: var(--surface);
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  padding: 20px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+  caret-color: var(--accent);
+}
+
+#pasteArea:focus { border-color: var(--accent); border-style: solid; }
+#pasteArea:not(:placeholder-shown) + .paste-hint { opacity: 0; }
+
+.paste-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sheet-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.sheet-tab {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sheet-tab:hover { border-color: var(--accent); color: var(--accent); }
+.sheet-tab.active { border-color: var(--accent); background: #e8ff0015; color: var(--accent); }
+
+.tab-label { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
+
+/* ===== PREVIEW TABLE ===== */
+#previewSection { display: none; animation: fadeIn 0.3s ease; }
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.count-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  padding: 6px 14px;
+  background: #e8ff0015;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+.error-box {
+  background: #ff44440d;
+  border: 1px solid #ff444433;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--danger);
+  display: none;
+}
+
+.error-box ul { padding-left: 16px; margin-top: 8px; }
+.error-box li { margin-bottom: 4px; }
+
+.table-wrap {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: auto;
+  max-height: 400px;
+  margin-bottom: 24px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead th {
+  background: var(--surface2);
+  padding: 12px 16px;
+  text-align: left;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface2); }
+
+tbody td {
+  padding: 10px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  vertical-align: top;
+}
+
+.td-tracking { color: var(--accent); font-weight: 700; }
+.td-order { color: var(--accent2); }
+.td-product { white-space: pre-line; line-height: 1.5; }
+.td-date { color: var(--muted); }
+
+/* ===== PRINT AREA ===== */
+@media screen {
+  #printArea { display: none; }
+}
+
+@media print {
+  body > *:not(#printArea) { display: none !important; }
+  #printArea { display: block !important; }
+
+  @page { size: 100mm 150mm; margin: 0; }
+
+  .label-page {
+    width: 100mm;
+    height: 150mm;
+    page-break-after: always;
+    page-break-inside: avoid;
+  }
+  .label-page:last-child { page-break-after: auto; }
+}
+
+#printArea { display: none; }
+
+.label-page {
+  width: 100mm;
+  height: 150mm;
+  background: white;
+  padding: 8mm;
+  position: relative;
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.label-date { text-align: right; font-size: 14px; font-weight: bold; margin-bottom: 3mm; color: #000; }
+.code-container { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3mm; }
+.barcode-container { flex: 1; text-align: left; margin-right: 5mm; height: 70px; overflow: hidden; }
+.barcode-container svg { height: 70px !important; width: auto !important; display: block; }
+.qr-container { flex: 0 0 70px; }
+.qr-container canvas { width: 70px !important; height: 70px !important; }
+.tracking-number { font-size: 14px; font-weight: bold; text-align: left; word-break: break-all; margin-bottom: 3mm; color: #000; }
+.order-id-line { font-size: 13px; font-weight: bold; margin-bottom: 3mm; word-break: break-all; color: #000; }
+.invoice-box { border: 2px dashed #000; padding: 5mm; margin-top: 3mm; }
+.invoice-title { font-size: 12px; font-weight: bold; margin-bottom: 2mm; text-transform: uppercase; color: #000; }
+.invoice-product { font-size: 14px; font-weight: bold; text-align: center; letter-spacing: 1px; line-height: 1.5; white-space: pre-line; color: #000; }
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid #0d0d0d44;
+  border-top-color: #0d0d0d;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  main { padding: 20px; }
+  header { padding: 16px 20px; }
+  .section-title { font-size: 22px; }
+  .steps { display: none; }
+}
+</style>
 </head>
-<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col items-center p-4">
-    <div class="w-full max-w-xl">
-        <h1 class="text-3xl font-bold text-center mb-6 text-primary"> 💖 Chúc Văn Thối Thi Tốt  💖</h1>
-        
-        <div id="stats" class="mb-4 flex justify-between text-sm">
-            <span id="currentWordIndex">Word: --/--</span>
-            <span id="remainingWords">Remaining: --</span>
-        </div>
-        
-        <div id="flashcardContainer" class="relative perspective w-full h-72 mb-6 cursor-pointer hidden">
-            <div id="flashcard" class="flashcard w-full h-full shadow-lg">
-                <div id="face1" class="card-face bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-4">
-                    <span id="kanji" class="text-6xl"></span>
-                </div>
-                
-                <div id="face2" class="card-face bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-4">
-                    <div class="flex flex-col items-center">
-                        <span id="hiragana" class="text-4xl mb-3"></span>
-                        <span id="meaning" class="text-3xl text-center"></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="flex gap-4 justify-center">
-            <button id="randomBtn" class="px-6 py-2 bg-primary text-white rounded shadow hover:bg-opacity-90 transition-colors duration-200 disabled:opacity-50 text-base" disabled>Ngẫu Nhiên</button>
-        </div>
-               
-        <div class="flex gap-4 justify-center mt-4">
-            <button id="range1Btn" class="px-6 py-2 bg-primary text-white rounded shadow hover:bg-opacity-90 transition-colors duration-200 disabled:opacity-50 text-base" disabled>1-220</button>
-            <button id="range2Btn" class="px-6 py-2 bg-primary text-white rounded shadow hover:bg-opacity-90 transition-colors duration-200 disabled:opacity-50 text-base" disabled>221-440</button>
-            <button id="range3Btn" class="px-6 py-2 bg-primary text-white rounded shadow hover:bg-opacity-90 transition-colors duration-200 disabled:opacity-50 text-base" disabled>441-660</button>
-            <button id="range4Btn" class="px-6 py-2 bg-primary text-white rounded shadow hover:bg-opacity-90 transition-colors duration-200 disabled:opacity-50 text-base" disabled>661-880</button>
-        </div>
-        
-        <div id="noDataMessage" class="mt-6 text-center">
-            Loading vocabulary data...
-        </div>
+<body>
+
+<header>
+  <div class="logo">LABEL<span>GEN</span></div>
+  <div class="badge">v2.0 · PASTE MODE</div>
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="resetAll()">↺ Reset</button>
+  </div>
+</header>
+
+<main>
+  <!-- STEPS -->
+  <div class="steps">
+    <div class="step active" id="step1"><span class="num">1</span> Chọn Sheet & Paste Data</div>
+    <div class="step" id="step2"><span class="num">2</span> Kiểm tra & Xác nhận</div>
+    <div class="step" id="step3"><span class="num">3</span> In Label</div>
+  </div>
+
+  <!-- PASTE SECTION -->
+  <div id="pasteSection">
+    <div class="section-title">Paste data từ <span>Excel</span></div>
+    <div class="section-sub">// Bôi chọn vùng data trong Excel → Ctrl+C → Paste vào đây</div>
+
+    <div class="tab-label">CHỌN LOẠI SHEET:</div>
+    <div class="sheet-tabs">
+      <div class="sheet-tab active" data-sheet="SDR" onclick="selectSheet(this)">SDR</div>
+      <div class="sheet-tab" data-sheet="BATT" onclick="selectSheet(this)">BATT</div>
+      <div class="sheet-tab" data-sheet="BFG" onclick="selectSheet(this)">BFG</div>
     </div>
 
-    <script>
-        // Initialize variables
-        const vocabularyData = [
-        { id: "1", kanji: "男性", hiragana: "だんせい", meaning: "đàn ông" },
-        { id: "2", kanji: "女性", hiragana: "じょせい", meaning: "phụ nữ" },
-        { id: "3", kanji: "高齢", hiragana: "こうれい", meaning: "cao tuổi" },
-        { id: "4", kanji: "年上", hiragana: "としうえ", meaning: "hơn tuổi" },
-        { id: "5", kanji: "目上", hiragana: "めうえ", meaning: "bề trên" },
-        { id: "6", kanji: "先輩", hiragana: "せんぱい", meaning: "tiền bối" },
-        { id: "7", kanji: "後輩", hiragana: "こうはい", meaning: "hậu bối" },
-        { id: "8", kanji: "上司", hiragana: "じょうし", meaning: "cấp trên" },
-        { id: "9", kanji: "相手", hiragana: "あいて", meaning: "người đối diện" },
-        { id: "10", kanji: "知り合い", hiragana: "しりあい", meaning: "người quen" },
-        { id: "11", kanji: "友人", hiragana: "ゆうじん", meaning: "bạn bè" },
-        { id: "12", kanji: "仲", hiragana: "なか", meaning: "mối quan hệ" },
-        { id: "13", kanji: "生年月日", hiragana: "せいねんがっぴ", meaning: "ngày tháng năm sinh" },
-        { id: "14", kanji: "誕生", hiragana: "たんじょう", meaning: "ra đời" },
-        { id: "15", kanji: "年", hiragana: "とし", meaning: "năm" },
-        { id: "16", kanji: "出身", hiragana: "しゅっしん", meaning: "quê quán" },
-        { id: "17", kanji: "故郷", hiragana: "こきょう", meaning: "cố hương" },
-        { id: "18", kanji: "成長", hiragana: "せいちょう", meaning: "trưởng thành" },
-        { id: "19", kanji: "成人", hiragana: "せいじん", meaning: "người trưởng thành" },
-        { id: "20", kanji: "合格", hiragana: "ごうかく", meaning: "đỗ đại học" },
-        { id: "21", kanji: "進学", hiragana: "しんがく", meaning: "vào đại học" },
-        { id: "22", kanji: "退学", hiragana: "たいがく", meaning: "bỏ học" },
-        { id: "23", kanji: "就職", hiragana: "しゅうしょく", meaning: "có việc làm" },
-        { id: "24", kanji: "退職", hiragana: "たいしょく", meaning: "nghỉ việc" },
-        { id: "25", kanji: "失業", hiragana: "しつぎょう", meaning: "thất nghiệp" },
-        { id: "26", kanji: "残業", hiragana: "ざんぎょう", meaning: "làm thêm" },
-        { id: "27", kanji: "生活", hiragana: "せいかつ", meaning: "cuộc sống" },
-        { id: "28", kanji: "通勤", hiragana: "つうきん", meaning: "đi làm" },
-        { id: "29", kanji: "学歴", hiragana: "がくれき", meaning: "bằng cấp" },
-        { id: "30", kanji: "給料", hiragana: "きゅうりょう", meaning: "tiền lương" },
-        { id: "31", kanji: "面接", hiragana: "めんせつ", meaning: "phỏng vấn" },
-        { id: "32", kanji: "休憩", hiragana: "きゅうけい", meaning: "nghỉ ngơi" },
-        { id: "33", kanji: "観光", hiragana: "かんこう", meaning: "tham quan" },
-        { id: "34", kanji: "帰国", hiragana: "きこく", meaning: "về nước" },
-        { id: "35", kanji: "帰省", hiragana: "きせい", meaning: "về quê" },
-        { id: "36", kanji: "帰宅", hiragana: "きたく", meaning: "về nhà" },
-        { id: "37", kanji: "参加", hiragana: "さんか", meaning: "tham gia" },
-        { id: "38", kanji: "出席", hiragana: "しゅっせき", meaning: "có mặt" },
-        { id: "39", kanji: "欠席", hiragana: "けっせき", meaning: "vắng mặt" },
-        { id: "40", kanji: "遅刻", hiragana: "ちこく", meaning: "đến muộn" },
-        { id: "41", kanji: "化粧", hiragana: "けしょう", meaning: "trang điểm" },
-        { id: "42", kanji: "計算", hiragana: "けいさん", meaning: "tính toán" },
-        { id: "43", kanji: "計画", hiragana: "けいかく", meaning: "kế hoạch" },
-        { id: "44", kanji: "成功", hiragana: "せいこう", meaning: "thành công" },
-        { id: "45", kanji: "失敗", hiragana: "しっぱい", meaning: "thất bại" },
-        { id: "46", kanji: "準備", hiragana: "じゅんび", meaning: "chuẩn bị" },
-        { id: "47", kanji: "整理", hiragana: "せいり", meaning: "chỉnh sửa" },
-        { id: "48", kanji: "注文", hiragana: "ちゅうもん", meaning: "đặt hàng" },
-        { id: "49", kanji: "貯金", hiragana: "ちょきん", meaning: "tiết kiệm" },
-        { id: "50", kanji: "徹夜", hiragana: "てつや", meaning: "thức xuyên đêm" },
-        { id: "51", kanji: "引っ越し", hiragana: "ひっこし", meaning: "chuyển nhà" },
-        { id: "52", kanji: "身長", hiragana: "しんちょう", meaning: "chiều cao" },
-        { id: "53", kanji: "体重", hiragana: "たいじゅう", meaning: "cân nặng" },
-        { id: "54", kanji: "けが", hiragana: "けが", meaning: "vết thương" },
-        { id: "55", kanji: "会", hiragana: "かい", meaning: "hội, tiệc" },
-        { id: "56", kanji: "趣味", hiragana: "しゅみ", meaning: "sở thích" },
-        { id: "57", kanji: "興味", hiragana: "きょうみ", meaning: "hứng thú" },
-        { id: "58", kanji: "思い出", hiragana: "おもいで", meaning: "nhớ lại" },
-        { id: "59", kanji: "冗談", hiragana: "じょうだん", meaning: "đùa cợt" },
-        { id: "60", kanji: "目的", hiragana: "もくてき", meaning: "mục đích" },
-        { id: "61", kanji: "約束", hiragana: "やくそく", meaning: "lời hứa" },
-        { id: "62", kanji: "おしゃべり", hiragana: "おしゃべり", meaning: "nói chuyện riêng" },
-        { id: "63", kanji: "遠慮", hiragana: "えんりょ", meaning: "ngại ngần" },
-        { id: "64", kanji: "我慢", hiragana: "がまん", meaning: "chịu đựng" },
-        { id: "65", kanji: "迷惑", hiragana: "めわく", meaning: "làm phiền" },
-        { id: "66", kanji: "希望", hiragana: "きぼう", meaning: "hi vọng" },
-        { id: "67", kanji: "夢", hiragana: "ゆめ", meaning: "giấc mơ" },
-        { id: "68", kanji: "賛成", hiragana: "さんせい", meaning: "đồng ý" },
-        { id: "69", kanji: "反対", hiragana: "はんたい", meaning: "đối lập" },
-        { id: "70", kanji: "想像", hiragana: "そうぞう", meaning: "tưởng tượng" },
-        { id: "71", kanji: "努力", hiragana: "どりょく", meaning: "nỗ lực" },
-        { id: "72", kanji: "太陽", hiragana: "たいよう", meaning: "mặt trời" },
-        { id: "73", kanji: "地球", hiragana: "ちきゅう", meaning: "trái đất" },
-        { id: "74", kanji: "温度", hiragana: "おんど", meaning: "nhiệt độ" },
-        { id: "75", kanji: "湿度", hiragana: "しつど", meaning: "độ ẩm" },
-        { id: "76", kanji: "湿気", hiragana: "しっけ", meaning: "hơi ẩm" },
-        { id: "77", kanji: "梅雨", hiragana: "つゆ", meaning: "mùa mưa" },
-        { id: "78", kanji: "かび", hiragana: "かび", meaning: "nấm mốc" },
-        { id: "79", kanji: "暖房", hiragana: "だんぼう", meaning: "điều hòa ấm" },
-        { id: "80", kanji: "皮", hiragana: "かわ", meaning: "da" },
-        { id: "81", kanji: "缶", hiragana: "かん", meaning: "đồ hộp" },
-        { id: "82", kanji: "画面", hiragana: "がめん", meaning: "màn hình" },
-        { id: "83", kanji: "番組", hiragana: "ばんぐみ", meaning: "chương trình" },
-        { id: "84", kanji: "記事", hiragana: "きじ", meaning: "ký sự" },
-        { id: "85", kanji: "近所", hiragana: "きんじょ", meaning: "xung quanh" },
-        { id: "86", kanji: "警察", hiragana: "けいさつ", meaning: "cảnh sát" },
-        { id: "87", kanji: "犯人", hiragana: "はんにん", meaning: "tội phạm" },
-        { id: "88", kanji: "小銭", hiragana: "こぜに", meaning: "tiền lẻ" },
-        { id: "89", kanji: "ごちそう", hiragana: "ごちそう", meaning: "chiêu đãi" },
-        { id: "90", kanji: "作者", hiragana: "作者", meaning: "tác giả" },
-        { id: "91", kanji: "作品", hiragana: "さくひん", meaning: "tác phẩm" },
-        { id: "92", kanji: "制服", hiragana: "せいふく", meaning: "đồng phục" },
-        { id: "93", kanji: "洗剤", hiragana: "せんざい", meaning: "bột giặt" },
-        { id: "94", kanji: "底", hiragana: "そこ", meaning: "đáy" },
-        { id: "95", kanji: "地下", hiragana: "ちか", meaning: "ngầm" },
-        { id: "96", kanji: "寺", hiragana: "てら", meaning: "chùa" },
-        { id: "97", kanji: "道路", hiragana: "どうろ", meaning: "đường" },
-        { id: "98", kanji: "坂", hiragana: "さか", meaning: "dốc" },
-        { id: "99", kanji: "煙", hiragana: "けむり", meaning: "khói" },
-        { id: "100", kanji: "灰", hiragana: "はい", meaning: "tàn" },
-        { id: "101", kanji: "判", hiragana: "はん", meaning: "con dấu" },
-        { id: "102", kanji: "名刺", hiragana: "めいし", meaning: "danh thiếp" },
-        { id: "103", kanji: "免許", hiragana: "めんきょ", meaning: "giấy phép" },
-        { id: "104", kanji: "多く", hiragana: "おおく", meaning: "nhiều" },
-        { id: "105", kanji: "前半", hiragana: "ぜんはん", meaning: "phần đầu" },
-        { id: "106", kanji: "後半", hiragana: "こうはん", meaning: "phần cuối" },
-        { id: "107", kanji: "最高", hiragana: "さいこう", meaning: "cao nhất" },
-        { id: "108", kanji: "最低", hiragana: "さいてい", meaning: "thấp nhất" },
-        { id: "109", kanji: "最初", hiragana: "さいしょ", meaning: "đầu tiên" },
-        { id: "110", kanji: "最後", hiragana: "さいご", meaning: "cuối cùng" },
-        { id: "111", kanji: "自動", hiragana: "じどう", meaning: "tự động" },
-        { id: "112", kanji: "種類", hiragana: "しゅるい", meaning: "loại" },
-        { id: "113", kanji: "性格", hiragana: "せいかく", meaning: "tính cách" },
-        { id: "114", kanji: "性質", hiragana: "せいしつ", meaning: "tính chất" },
-        { id: "115", kanji: "順番", hiragana: "じゅんばん", meaning: "thứ tự" },
-        { id: "116", kanji: "番", hiragana: "ばん", meaning: "lượt" },
-        { id: "117", kanji: "方法", hiragana: "ほうほう", meaning: "phương pháp" },
-        { id: "118", kanji: "製品", hiragana: "せいひん", meaning: "sản phẩm" },
-        { id: "119", kanji: "値上がり", hiragana: "ねあがり", meaning: "tăng giá" },
-        { id: "120", kanji: "生", hiragana: "なま", meaning: "tươi" },
-        { id: "121", kanji: "渇く", hiragana: "かわく", meaning: "khát" },
-        { id: "122", kanji: "嗅ぐ", hiragana: "かぐ", meaning: "ngửi" },
-        { id: "123", kanji: "叩く", hiragana: "たたく", meaning: "đánh, vỗ" },
-        { id: "124", kanji: "殴る", hiragana: "なぐる", meaning: "đấm" },
-        { id: "125", kanji: "ける", hiragana: "ける", meaning: "đá" },
-        { id: "126", kanji: "抱く", hiragana: "だく", meaning: "ôm" },
-        { id: "127", kanji: "倒れる", hiragana: "たおれる", meaning: "đổ" },
-        { id: "128", kanji: "倒す", hiragana: "たおす", meaning: "làm đổ" },
-        { id: "129", kanji: "起きる", hiragana: "おきる", meaning: "thức dậy" },
-        { id: "130", kanji: "起こす", hiragana: "おこす", meaning: "đánh thức" },
-        { id: "131", kanji: "尋ねる", hiragana: "たずねる", meaning: "hỏi" },
-        { id: "132", kanji: "呼ぶ", hiragana: "よぶ", meaning: "gọi" },
-        { id: "133", kanji: "叫ぶ", hiragana: "さけぶ", meaning: "gào to" },
-        { id: "134", kanji: "黙る", hiragana: "だまる", meaning: "im lặng" },
-        { id: "135", kanji: "飼う", hiragana: "かう", meaning: "nuôi" },
-        { id: "136", kanji: "数える", hiragana: "かぞえる", meaning: "đếm" },
-        { id: "137", kanji: "乾く", hiragana: "かわく", meaning: "khô" },
-        { id: "138", kanji: "乾かす", hiragana: "かわかす", meaning: "làm khô" },
-        { id: "139", kanji: "畳む", hiragana: "たたむ", meaning: "gấp" },
-        { id: "140", kanji: "誘う", hiragana: "さそう", meaning: "mời, rủ" },
-        { id: "141", kanji: "おごる", hiragana: "おごる", meaning: "chiêu đãi" },
-        { id: "142", kanji: "預かる", hiragana: "あずかる", meaning: "chăm sóc" },
-        { id: "143", kanji: "預ける", hiragana: "あずける", meaning: "gửi" },
-        { id: "144", kanji: "決まる", hiragana: "きまる", meaning: "được quyết định" },
-        { id: "145", kanji: "決める", hiragana: "きめる", meaning: "quyết định" },
-        { id: "146", kanji: "写る", hiragana: "うつる", meaning: "chụp được" },
-        { id: "147", kanji: "写す", hiragana: "うつす", meaning: "chụp" },
-        { id: "148", kanji: "思い出す", hiragana: "おもいだす", meaning: "nhớ lại" },
-        { id: "149", kanji: "教わる", hiragana: "おそわる", meaning: "được dạy" },
-        { id: "150", kanji: "申し込む", hiragana: "もうしこむ", meaning: "đăng ký" },
-        { id: "151", kanji: "断る", hiragana: "ことわる", meaning: "từ chối" },
-        { id: "152", kanji: "見つかる", hiragana: "みつかる", meaning: "được tìm thấy" },
-        { id: "153", kanji: "見つける", hiragana: "みつける", meaning: "tìm thấy" },
-        { id: "154", kanji: "捕まる", hiragana: "つかまる", meaning: "bị bắt" },
-        { id: "155", kanji: "捕まえる", hiragana: "つかまえる", meaning: "bắt" },
-        { id: "156", kanji: "乗る", hiragana: "のる", meaning: "leo lên" },
-        { id: "157", kanji: "乗せる", hiragana: "のせる", meaning: "cho lên" },
-        { id: "158", kanji: "降りる", hiragana: "おりる", meaning: "xuống" },
-        { id: "159", kanji: "降ろす", hiragana: "おろす", meaning: "cho xuống" },
-        { id: "160", kanji: "直る", hiragana: "なおる", meaning: "được sửa" },
-        { id: "161", kanji: "直す", hiragana: "なおす", meaning: "sửa" },
-        { id: "162", kanji: "治る", hiragana: "なおる", meaning: "hồi phục" },
-        { id: "163", kanji: "治す", hiragana: "なおす", meaning: "cứu chữa" },
-        { id: "164", kanji: "亡くなる", hiragana: "なくなる", meaning: "chết" },
-        { id: "165", kanji: "亡くす", hiragana: "なくす", meaning: "mất" },
-        { id: "166", kanji: "生まれる", hiragana: "うまれる", meaning: "được sinh ra" },
-        { id: "167", kanji: "生む", hiragana: "うむ", meaning: "sinh" },
-        { id: "168", kanji: "出会う", hiragana: "であう", meaning: "gặp (ngẫu nhiên)" },
-        { id: "169", kanji: "訪ねる", hiragana: "たずねる", meaning: "thăm" },
-        { id: "170", kanji: "付き合う", hiragana: "つきあう", meaning: "hẹn hò, giao tiếp" },
-        { id: "171", kanji: "効く", hiragana: "きく", meaning: "có hiệu quả" },
-        { id: "172", kanji: "はやる", hiragana: "はやる", meaning: "phổ biến" },
-        { id: "173", kanji: "経つ", hiragana: "たつ", meaning: "qua" },
-        { id: "174", kanji: "間に合う", hiragana: "まにあう", meaning: "làm cho kịp giờ" },
-        { id: "175", kanji: "間に合わせる", hiragana: "まにあわせる", meaning: "kịp giờ" },
-        { id: "176", kanji: "通う", hiragana: "かよう", meaning: "đi làm, học" },
-        { id: "177", kanji: "込む", hiragana: "こむ", meaning: "đông" },
-        { id: "178", kanji: "すれ違う", hiragana: "すれちあう", meaning: "vượt, lướt" },
-        { id: "179", kanji: "掛かる", hiragana: "かかる", meaning: "được bao phủ" },
-        { id: "180", kanji: "掛ける", hiragana: "かける", meaning: "bao phủ" },
-        { id: "181", kanji: "動く", hiragana: "うごく", meaning: "hoạt động" },
-        { id: "182", kanji: "動かす", hiragana: "うごかす", meaning: "di chuyển" },
-        { id: "183", kanji: "離れる", hiragana: "はなれる", meaning: "tránh xa" },
-        { id: "184", kanji: "離す", hiragana: "はなす", meaning: "tách ra" },
-        { id: "185", kanji: "ぶつかる", hiragana: "ぶつかる", meaning: "bị đâm" },
-        { id: "186", kanji: "ぶつける", hiragana: "ぶつける", meaning: "đâm" },
-        { id: "187", kanji: "こぼれる", hiragana: "こぼれる", meaning: "bị tràn" },
-        { id: "188", kanji: "こぼす", hiragana: "こぼす", meaning: "tràn" },
-        { id: "189", kanji: "ふく", hiragana: "ふく", meaning: "lau" },
-        { id: "190", kanji: "片付く", hiragana: "かたづく", meaning: "được dọn dẹp" },
-        { id: "191", kanji: "片付ける", hiragana: "かたづける", meaning: "dọn dẹp" },
-        { id: "192", kanji: "包む", hiragana: "つつむ", meaning: "bọc" },
-        { id: "193", kanji: "張る", hiragana: "はる", meaning: "dán" },
-        { id: "194", kanji: "無くなる", hiragana: "なくなる", meaning: "bị mất" },
-        { id: "195", kanji: "無くす", hiragana: "なくす", meaning: "mất" },
-        { id: "196", kanji: "足りる", hiragana: "たりる", meaning: "đủ" },
-        { id: "197", kanji: "残る", hiragana: "のこる", meaning: "bị thừa" },
-        { id: "198", kanji: "残す", hiragana: "のこす", meaning: "thừa" },
-        { id: "199", kanji: "腐る", hiragana: "くさる", meaning: "thối" },
-        { id: "200", kanji: "むける", hiragana: "むける", meaning: "bị lột" },
-        { id: "201", kanji: "むく", hiragana: "むく", meaning: "lột" },
-        { id: "202", kanji: "滑る", hiragana: "すべる", meaning: "trượt" },
-        { id: "203", kanji: "積もる", hiragana: "つもる", meaning: "được tích tụ" },
-        { id: "204", kanji: "積む", hiragana: "つむ", meaning: "tích tụ, chất lại" },
-        { id: "205", kanji: "空く", hiragana: "あく", meaning: "bị thủng" },
-        { id: "206", kanji: "空ける", hiragana: "あける", meaning: "thủng" },
-        { id: "207", kanji: "下がる", hiragana: "さがる", meaning: "bị giảm" },
-        { id: "208", kanji: "下げる", hiragana: "さげる", meaning: "giảm" },
-        { id: "209", kanji: "冷える", hiragana: "ひえる", meaning: "bị lạnh" },
-        { id: "210", kanji: "冷やす", hiragana: "ひやす", meaning: "làm lạnh" },
-        { id: "211", kanji: "冷める", hiragana: "さめる", meaning: "bị nguội" },
-        { id: "212", kanji: "冷ます", hiragana: "さます", meaning: "làm nguội" },
-        { id: "213", kanji: "燃える", hiragana: "もえる", meaning: "cháy" },
-        { id: "214", kanji: "燃やす", hiragana: "もやす", meaning: "đốt" },
-        { id: "215", kanji: "沸く", hiragana: "わく", meaning: "sôi" },
-        { id: "216", kanji: "沸かす", hiragana: "わかす", meaning: "đun sôi" },
-        { id: "217", kanji: "鳴る", hiragana: "なる", meaning: "kêu" },
-        { id: "218", kanji: "鳴らす", hiragana: "ならす", meaning: "làm kêu" },
-        { id: "219", kanji: "役立つ", hiragana: "やくだつ", meaning: "hữu ích" },
-        { id: "220", kanji: "役立てる", hiragana: "やくだてる", meaning: "được sử dụng" },
-        { id: "221", kanji: "飾り", hiragana: "かざり", meaning: "trang trí" },
-        { id: "222", kanji: "遊び", hiragana: "あそび", meaning: "chơi" },
-        { id: "223", kanji: "集まり", hiragana: "あつまり", meaning: "tập hợp" },
-        { id: "224", kanji: "教え", hiragana: "おしえ", meaning: "dạy" },
-        { id: "225", kanji: "踊り", hiragana: "おどり", meaning: "nhảy" },
-        { id: "226", kanji: "思い", hiragana: "おもい", meaning: "suy nghĩ, cảm giác" },
-        { id: "227", kanji: "考え", hiragana: "かんがえ", meaning: "nghĩ, ý tưởng" },
-        { id: "228", kanji: "片づけ", hiragana: "かたづけ", meaning: "ngăn nắp" },
-        { id: "229", kanji: "手伝い", hiragana: "てつだい", meaning: "giúp đỡ" },
-        { id: "230", kanji: "働き", hiragana: "はたらき", meaning: "hoạt động" },
-        { id: "231", kanji: "決まり", hiragana: "きまり", meaning: "luật lệ" },
-        { id: "232", kanji: "騒ぎ", hiragana: "さわぎ", meaning: "ồn ào, om xòm" },
-        { id: "233", kanji: "知らせ", hiragana: "しらせ", meaning: "tin tức, thông báo" },
-        { id: "234", kanji: "頼み", hiragana: "たのみ", meaning: "yêu cầu" },
-        { id: "235", kanji: "疲れ", hiragana: "つかれ", meaning: "vất vả, mệt mỏi" },
-        { id: "236", kanji: "違い", hiragana: "ちがい", meaning: "khác biệt" },
-        { id: "237", kanji: "始め", hiragana: "はじめ", meaning: "khởi đầu" },
-        { id: "238", kanji: "続き", hiragana: "つづき", meaning: "tiếp tục" },
-        { id: "239", kanji: "暮れ", hiragana: "くれ", meaning: "cuối năm" },
-        { id: "240", kanji: "行き", hiragana: "いき", meaning: "đi" },
-        { id: "241", kanji: "帰り", hiragana: "かえり", meaning: "trở về" },
-        { id: "242", kanji: "急ぎ", hiragana: "いそぎ", meaning: "khẩn cấp, vội" },
-        { id: "243", kanji: "遅れ", hiragana: "おくれ", meaning: "gián đoạn" },
-        { id: "244", kanji: "貸し", hiragana: "かし", meaning: "cho mượn" },
-        { id: "245", kanji: "借り", hiragana: "かり", meaning: "mượn" },
-        { id: "246", kanji: "勝ち", hiragana: "かち", meaning: "thắng" },
-        { id: "247", kanji: "負け", hiragana: "まけ", meaning: "thua" },
-        { id: "248", kanji: "迎え", hiragana: "むかえ", meaning: "đón" },
-        { id: "249", kanji: "始まり", hiragana: "はじまり", meaning: "bắt đầu" },
-        { id: "250", kanji: "終わり", hiragana: "おわり", meaning: "kết thúc" },
-        { id: "251", kanji: "戻り", hiragana: "もどり", meaning: "trở về, trả lại" },
-        { id: "252", kanji: "別れ", hiragana: "わかれ", meaning: "chia ly" },
-        { id: "253", kanji: "喜び", hiragana: "よろこび", meaning: "hớn hở" },
-        { id: "254", kanji: "楽しみ", hiragana: "たのしみ", meaning: "sung sướng" },
-        { id: "255", kanji: "笑い", hiragana: "わらい", meaning: "cười" },
-        { id: "256", kanji: "驚き", hiragana: "おどろき", meaning: "ngạc nhiên" },
-        { id: "257", kanji: "怒り", hiragana: "いかり", meaning: "giận dữ" },
-        { id: "258", kanji: "悲しみ", hiragana: "かなしみ", meaning: "buồn bã" },
-        { id: "259", kanji: "幸せな", hiragana: "しあわせな", meaning: "hạnh phúc" },
-        { id: "260", kanji: "得意な", hiragana: "とくいな", meaning: "mạnh, giỏi" },
-        { id: "261", kanji: "苦手な", hiragana: "にがてな", meaning: "yếu, kém" },
-        { id: "262", kanji: "熱心な", hiragana: "ねっしんな", meaning: "chăm chỉ" },
-        { id: "263", kanji: "夢中な", hiragana: "むちゅうな", meaning: "chú tâm" },
-        { id: "264", kanji: "退屈な", hiragana: "たいくつな", meaning: "chán" },
-        { id: "265", kanji: "健康な", hiragana: "けんこうな", meaning: "khỏe khoắn" },
-        { id: "266", kanji: "苦しい", hiragana: "くるしい", meaning: "cực khổ" },
-        { id: "267", kanji: "平気な", hiragana: "へいきな", meaning: "bình thản" },
-        { id: "268", kanji: "悔しい", hiragana: "くやしい", meaning: "cay cú" },
-        { id: "269", kanji: "うらやましい", hiragana: "うらやましい", meaning: "ghen tỵ" },
-        { id: "270", kanji: "かゆい", hiragana: "かゆい", meaning: "ngứa" },
-        { id: "271", kanji: "おとなしい", hiragana: "おとなしい", meaning: "trầm lặng" },
-        { id: "272", kanji: "我慢強い", hiragana: "がまんづよい", meaning: "chịu đựng giỏi" },
-        { id: "273", kanji: "正直な", hiragana: "しょうじきな", meaning: "trung thực" },
-        { id: "274", kanji: "けちな", hiragana: "けちな", meaning: "kẹt xỉ" },
-        { id: "275", kanji: "我儘な", hiragana: "わがままな", meaning: "ích kỷ" },
-        { id: "276", kanji: "積極的な", hiragana: "せっきょくてきな", meaning: "tích cực" },
-        { id: "277", kanji: "消極的な", hiragana: "しょうきょくてきな", meaning: "tiêu cực" },
-        { id: "278", kanji: "満足な", hiragana: "まんぞくな", meaning: "thỏa mãn" },
-        { id: "279", kanji: "不満な", hiragana: "ふまんな", meaning: "bất mãn" },
-        { id: "280", kanji: "不安な", hiragana: "ふあんな", meaning: "bất an" },
-        { id: "281", kanji: "大変な", hiragana: "たいへんな", meaning: "tồi tệ" },
-        { id: "282", kanji: "無理な", hiragana: "むりな", meaning: "vô lý" },
-        { id: "283", kanji: "不注意な", hiragana: "ふちゅういな", meaning: "không chú ý" },
-        { id: "284", kanji: "楽な", hiragana: "らくな", meaning: "thoải mái" },
-        { id: "285", kanji: "面倒な", hiragana: "めんどうな", meaning: "phiền phức" },
-        { id: "286", kanji: "失礼な", hiragana: "しつれいな", meaning: "thất lễ" },
-        { id: "287", kanji: "当然な", hiragana: "とうぜんな", meaning: "đương nhiên" },
-        { id: "288", kanji: "意外な", hiragana: "いがいな", meaning: "không ngờ đến" },
-        { id: "289", kanji: "結構な", hiragana: "けっこうな", meaning: "tốt, đủ" },
-        { id: "290", kanji: "派手な", hiragana: "はでな", meaning: "lòe loẹt" },
-        { id: "291", kanji: "地味な", hiragana: "じみな", meaning: "giản dị" },
-        { id: "292", kanji: "おしゃれな", hiragana: "おしゃれな", meaning: "thời trang, mốt" },
-        { id: "293", kanji: "変な", hiragana: "へんな", meaning: "lạ" },
-        { id: "294", kanji: "不思議な", hiragana: "ふしぎな", meaning: "thần bí" },
-        { id: "295", kanji: "ましな", hiragana: "ましな", meaning: "tốt lên" },
-        { id: "296", kanji: "むだな", hiragana: "むだな", meaning: "lãng phí" },
-        { id: "297", kanji: "自由な", hiragana: "じゆうな", meaning: "tự do" },
-        { id: "298", kanji: "不自由な", hiragana: "ふじゆうな", meaning: "tàn tật, không tự do" },
-        { id: "299", kanji: "温まる", hiragana: "あたたまる", meaning: "trở nên ấm hơn" },
-        { id: "300", kanji: "温める", hiragana: "あたためる", meaning: "ấm, nóng" },
-        { id: "301", kanji: "高まる", hiragana: "たかまる", meaning: "cao lên" },
-        { id: "302", kanji: "高める", hiragana: "たかめる", meaning: "làm cao lên" },
-        { id: "303", kanji: "強まる", hiragana: "つよまる", meaning: "mạnh lên" },
-        { id: "304", kanji: "強める", hiragana: "つよめる", meaning: "làm mạnh lên" },
-        { id: "305", kanji: "弱まる", hiragana: "よわまる", meaning: "yếu đi" },
-        { id: "306", kanji: "弱める", hiragana: "よわめる", meaning: "làm yếu đi" },
-        { id: "307", kanji: "広まる", hiragana: "ひろまる", meaning: "rộng ra" },
-        { id: "308", kanji: "広める", hiragana: "ひろめる", meaning: "làm rộng ra" },
-        { id: "309", kanji: "深まる", hiragana: "ふかまる", meaning: "sâu hơn" },
-        { id: "310", kanji: "深める", hiragana: "ふかめる", meaning: "làm sâu thêm" },
-        { id: "311", kanji: "世話", hiragana: "せわ", meaning: "chăm sóc" },
-        { id: "312", kanji: "家庭", hiragana: "かてい", meaning: "gia đình" },
-        { id: "313", kanji: "協力", hiragana: "きょうりょく", meaning: "hiệp lực" },
-        { id: "314", kanji: "感謝", hiragana: "かんしゃ", meaning: "cảm tạ" },
-        { id: "315", kanji: "お礼", hiragana: "おれい", meaning: "đáp lễ" },
-        { id: "316", kanji: "お詫び", hiragana: "おわび", meaning: "xin lỗi" },
-        { id: "317", kanji: "おじぎ", hiragana: "おじぎ", meaning: "cúi chào" },
-        { id: "318", kanji: "握手", hiragana: "あくしゅ", meaning: "bắt tay" },
-        { id: "319", kanji: "いじわる", hiragana: "いじわる", meaning: "xấu bụng" },
-        { id: "320", kanji: "いたずら", hiragana: "いたずら", meaning: "nghịch ngợm" },
-        { id: "321", kanji: "節約", hiragana: "せつやく", meaning: "tiết kiệm" },
-        { id: "322", kanji: "経営", hiragana: "けいえい", meaning: "quản lý" },
-        { id: "323", kanji: "反省", hiragana: "はんせい", meaning: "tự kiểm tra" },
-        { id: "324", kanji: "実行", hiragana: "じっこう", meaning: "thực hành" },
-        { id: "325", kanji: "進歩", hiragana: "しんぽ", meaning: "tiến bộ" },
-        { id: "326", kanji: "変化", hiragana: "へんか", meaning: "thay đổi, biến hóa" },
-        { id: "327", kanji: "発達", hiragana: "はったつ", meaning: "phát triển" },
-        { id: "328", kanji: "体力", hiragana: "たいりょく", meaning: "thể lực" },
-        { id: "329", kanji: "出場", hiragana: "しゅつじょう", meaning: "tham dự" },
-        { id: "330", kanji: "活躍", hiragana: "かつやく", meaning: "hoạt động" },
-        { id: "331", kanji: "競争", hiragana: "きょうそう", meaning: "cạnh tranh" },
-        { id: "332", kanji: "応援", hiragana: "おうえん", meaning: "cổ vũ" },
-        { id: "333", kanji: "拍手", hiragana: "はくしゅ", meaning: "vỗ tay" },
-        { id: "334", kanji: "人気", hiragana: "にんき", meaning: "nổi tiếng" },
-        { id: "335", kanji: "うわさ", hiragana: "うわさ", meaning: "tin đồn" },
-        { id: "336", kanji: "情報", hiragana: "じょうほう", meaning: "thông tin" },
-        { id: "337", kanji: "交換", hiragana: "こうかん", meaning: "trao đổi" },
-        { id: "338", kanji: "流行", hiragana: "りゅうこう", meaning: "trào lưu" },
-        { id: "339", kanji: "宣伝", hiragana: "せんでん", meaning: "tuyên truyền" },
-        { id: "340", kanji: "広告", hiragana: "こうこく", meaning: "quảng cáo" },
-        { id: "341", kanji: "注目", hiragana: "ちゅうもく", meaning: "chú trọng" },
-        { id: "342", kanji: "通訳", hiragana: "つうやく", meaning: "thông dịch" },
-        { id: "343", kanji: "翻訳", hiragana: "ほにゃく", meaning: "biên dịch" },
-        { id: "344", kanji: "伝言", hiragana: "でんごん", meaning: "tin nhắn thoại" },
-        { id: "345", kanji: "報告", hiragana: "ほうこく", meaning: "báo cáo" },
-        { id: "346", kanji: "録画", hiragana: "ろくが", meaning: "ghi lại" },
-        { id: "347", kanji: "混雑", hiragana: "こんざつ", meaning: "hỗn tạp" },
-        { id: "348", kanji: "渋滞", hiragana: "じゅうたい", meaning: "tắc đường" },
-        { id: "349", kanji: "衝突", hiragana: "しょうとつ", meaning: "xung đột" },
-        { id: "350", kanji: "被害", hiragana: "ひがい", meaning: "thiệt hại" },
-        { id: "351", kanji: "事故", hiragana: "じこ", meaning: "tai nạn" },
-        { id: "352", kanji: "事件", hiragana: "じけん", meaning: "sự kiện" },
-        { id: "353", kanji: "故障", hiragana: "こしょう", meaning: "hỏng" },
-        { id: "354", kanji: "修理", hiragana: "しゅうり", meaning: "sửa chữa" },
-        { id: "355", kanji: "停電", hiragana: "ていでん", meaning: "mất điện" },
-        { id: "356", kanji: "調子", hiragana: "ちょうし", meaning: "trạng thái" },
-        { id: "357", kanji: "緊張", hiragana: "きんちょう", meaning: "lo lắng" },
-        { id: "358", kanji: "自身", hiragana: "じしん", meaning: "tự tin" },
-        { id: "359", kanji: "自慢", hiragana: "じまん", meaning: "tự mãn" },
-        { id: "360", kanji: "感心", hiragana: "かんしん", meaning: "quan tâm" },
-        { id: "361", kanji: "感動", hiragana: "かんどう", meaning: "cảm động" },
-        { id: "362", kanji: "興奮", hiragana: "こうふん", meaning: "hưng phấn" },
-        { id: "363", kanji: "感想", hiragana: "かんそう", meaning: "cảm tưởng" },
-        { id: "364", kanji: "予想", hiragana: "よそう", meaning: "dự đoán" },
-        { id: "365", kanji: "専門", hiragana: "せんもん", meaning: "chuyên môn" },
-        { id: "366", kanji: "研究", hiragana: "けんきゅう", meaning: "nghiên cứu" },
-        { id: "367", kanji: "調査", hiragana: "ちょうさ", meaning: "điều tra" },
-        { id: "368", kanji: "原因", hiragana: "げんいん", meaning: "nguyên nhân" },
-        { id: "369", kanji: "結果", hiragana: "けっか", meaning: "kết quả" },
-        { id: "370", kanji: "解決", hiragana: "かいけつ", meaning: "giải quyết" },
-        { id: "371", kanji: "確認", hiragana: "かくにん", meaning: "xác nhận" },
-        { id: "372", kanji: "利用", hiragana: "りよう", meaning: "sử dụng" },
-        { id: "373", kanji: "理解", hiragana: "りかい", meaning: "lý giải" },
-        { id: "374", kanji: "発見", hiragana: "はっけん", meaning: "phát kiến" },
-        { id: "375", kanji: "発明", hiragana: "はつめい", meaning: "phát minh" },
-        { id: "376", kanji: "関係", hiragana: "かんけい", meaning: "quan hệ" },
-        { id: "377", kanji: "団体", hiragana: "だんたい", meaning: "đoàn thể" },
-        { id: "378", kanji: "選挙", hiragana: "せんきょ", meaning: "bầu cử" },
-        { id: "379", kanji: "税金", hiragana: "ぜいきん", meaning: "thuế" },
-        { id: "380", kanji: "責任", hiragana: "せきにん", meaning: "trách nhiệm" },
-        { id: "381", kanji: "書類", hiragana: "しょるい", meaning: "tài liệu" },
-        { id: "382", kanji: "題名", hiragana: "だいめい", meaning: "tiêu đề" },
-        { id: "383", kanji: "条件", hiragana: "じょうけん", meaning: "điều kiện" },
-        { id: "384", kanji: "締め切り", hiragana: "しめきり", meaning: "hạn cuối" },
-        { id: "385", kanji: "期間", hiragana: "きかん", meaning: "thời gian, thời kỳ" },
-        { id: "386", kanji: "倍", hiragana: "ばい", meaning: "lần" },
-        { id: "387", kanji: "くじ", hiragana: "くじ", meaning: "xổ số, rút thăm" },
-        { id: "388", kanji: "近道", hiragana: "ちかみち", meaning: "đường tắt" },
-        { id: "389", kanji: "中心", hiragana: "ちゅうしん", meaning: "trung tâm" },
-        { id: "390", kanji: "辺り", hiragana: "あたり", meaning: "gần, lân cận" },
-        { id: "391", kanji: "周り", hiragana: "まわり", meaning: "xung quanh, vòng quanh" },
-        { id: "392", kanji: "穴", hiragana: "あな", meaning: "lỗ" },
-        { id: "393", kanji: "列", hiragana: "れつ", meaning: "hàng" },
-        { id: "394", kanji: "幅", hiragana: "はば", meaning: "chiều rộng" },
-        { id: "395", kanji: "範囲", hiragana: "はんい", meaning: "phạm vi" },
-        { id: "396", kanji: "内容", hiragana: "ないよう", meaning: "nội dung" },
-        { id: "397", kanji: "中身", hiragana: "なかみ", meaning: "bên trong" },
-        { id: "398", kanji: "特徴", hiragana: "とくちょう", meaning: "đặc trưng" },
-        { id: "399", kanji: "普通", hiragana: "ふつう", meaning: "bình thường" },
-        { id: "400", kanji: "当たり前", hiragana: "あたりまえ", meaning: "đương nhiên" },
-        { id: "401", kanji: "偽", hiragana: "にせ", meaning: "giả" },
-        { id: "402", kanji: "別", hiragana: "べつ", meaning: "khác" },
-        { id: "403", kanji: "国籍", hiragana: "こくせき", meaning: "quốc tịch" },
-        { id: "404", kanji: "東洋", hiragana: "とうよう", meaning: "phương đông" },
-        { id: "405", kanji: "西洋", hiragana: "せいよう", meaning: "phương tây" },
-        { id: "406", kanji: "国際", hiragana: "こくさい", meaning: "quốc tế" },
-        { id: "407", kanji: "自然", hiragana: "しぜん", meaning: "tự nhiên" },
-        { id: "408", kanji: "景色", hiragana: "けしき", meaning: "phong cảnh" },
-        { id: "409", kanji: "宗教", hiragana: "しゅうきょう", meaning: "tôn giáo" },
-        { id: "410", kanji: "愛", hiragana: "あい", meaning: "yêu" },
-        { id: "411", kanji: "届く", hiragana: "とどく", meaning: "được giao đến" },
-        { id: "412", kanji: "届ける", hiragana: "とどける", meaning: "giao đến" },
-        { id: "413", kanji: "かく", hiragana: "かく", meaning: "gãi" },
-        { id: "414", kanji: "つかむ", hiragana: "つかむ", meaning: "tóm, chộp" },
-        { id: "415", kanji: "握る", hiragana: "にぎる", meaning: "nắm chặt" },
-        { id: "416", kanji: "抑える", hiragana: "おさえる", meaning: "giữ" },
-        { id: "417", kanji: "近づく", hiragana: "ちかづく", meaning: "lại gần" },
-        { id: "418", kanji: "近づける", hiragana: "ちかづける", meaning: "mang đến gần" },
-        { id: "419", kanji: "合う", hiragana: "あう", meaning: "gặp" },
-        { id: "420", kanji: "合わせる", hiragana: "あわせる", meaning: "tập hợp, hiệp lực" },
-        { id: "421", kanji: "当たる", hiragana: "あたる", meaning: "bị đánh" },
-        { id: "422", kanji: "当てる", hiragana: "あてる", meaning: "đánh" },
-        { id: "423", kanji: "比べる", hiragana: "くらべる", meaning: "so sánh" },
-        { id: "424", kanji: "似合う", hiragana: "にあう", meaning: "hợp" },
-        { id: "425", kanji: "似る", hiragana: "にる", meaning: "giống" },
-        { id: "426", kanji: "似せる", hiragana: "にせる", meaning: "bắt chước" },
-        { id: "427", kanji: "分かれる", hiragana: "わかれる", meaning: "được chia ra" },
-        { id: "428", kanji: "分ける", hiragana: "わける", meaning: "chia" },
-        { id: "429", kanji: "足す", hiragana: "たす", meaning: "cộng, thêm vào" },
-        { id: "430", kanji: "引く", hiragana: "ひく", meaning: "kéo, trừ" },
-        { id: "431", kanji: "増える", hiragana: "ふえる", meaning: "tăng lên" },
-        { id: "432", kanji: "増やす", hiragana: "ふやす", meaning: "làm tăng lên" },
-        { id: "433", kanji: "減る", hiragana: "へる", meaning: "giảm xuống" },
-        { id: "434", kanji: "減らす", hiragana: "へらす", meaning: "làm giảm xuống" },
-        { id: "435", kanji: "変わる", hiragana: "かわる", meaning: "thay đổi" },
-        { id: "436", kanji: "変える", hiragana: "かえる", meaning: "làm thay đổi" },
-        { id: "437", kanji: "代わる・替わる・換わる", hiragana: "かわる", meaning: "thay" },
-        { id: "438", kanji: "代える・替える・換える", hiragana: "かえる", meaning: "đổi" },
-        { id: "439", kanji: "返る", hiragana: "かえる", meaning: "được trả lại" },
-        { id: "440", kanji: "返す", hiragana: "かえす", meaning: "trả lại" },
-        { id: "441", kanji: "譲る", hiragana: "ゆずる", meaning: "nhường" },
-        { id: "442", kanji: "助かる", hiragana: "たすかる", meaning: "được giúp" },
-        { id: "443", kanji: "助ける", hiragana: "たすける", meaning: "giúp" },
-        { id: "444", kanji: "いじめる", hiragana: "いじめる", meaning: "bắt nạt" },
-        { id: "445", kanji: "だまる", hiragana: "だまる", meaning: "lừa" },
-        { id: "446", kanji: "盗む", hiragana: "ぬすむ", meaning: "lấy cắp" },
-        { id: "447", kanji: "刺さる", hiragana: "ささる", meaning: "bị đâm" },
-        { id: "448", kanji: "刺す", hiragana: "さす", meaning: "đâm" },
-        { id: "449", kanji: "殺す", hiragana: "ころす", meaning: "giết" },
-        { id: "450", kanji: "隠れる", hiragana: "かくれる", meaning: "ẩn náu, trốn" },
-        { id: "451", kanji: "隠す", hiragana: "かくす", meaning: "che giấu" },
-        { id: "452", kanji: "埋まる", hiragana: "うまる", meaning: "bị chôn" },
-        { id: "453", kanji: "埋める", hiragana: "うめる", meaning: "chôn" },
-        { id: "454", kanji: "囲む", hiragana: "かこむ", meaning: "vây quanh" },
-        { id: "455", kanji: "詰まる", hiragana: "つまる", meaning: "đầy, chặt" },
-        { id: "456", kanji: "詰める", hiragana: "つめる", meaning: "đóng gói" },
-        { id: "457", kanji: "開く", hiragana: "ひらく", meaning: "mở" },
-        { id: "458", kanji: "閉じる", hiragana: "とじる", meaning: "dđóng" },
-        { id: "459", kanji: "飛ぶ", hiragana: "とぶ", meaning: "bay" },
-        { id: "460", kanji: "飛ばす", hiragana: "とばす", meaning: "cho bay" },
-        { id: "461", kanji: "振る", hiragana: "ふる", meaning: "rung, vẫy" },
-        { id: "462", kanji: "めくる", hiragana: "めくる", meaning: "lật lên" },
-        { id: "463", kanji: "見かける", hiragana: "みかける", meaning: "tình cờ thấy" },
-        { id: "464", kanji: "確かめる", hiragana: "たしかめる", meaning: "kiểm tra lại" },
-        { id: "465", kanji: "試す", hiragana: "ためす", meaning: "thử" },
-        { id: "466", kanji: "繰り返す", hiragana: "くりかえす", meaning: "lặp lại" },
-        { id: "467", kanji: "訳す", hiragana: "やくす", meaning: "dịch" },
-        { id: "468", kanji: "行う", hiragana: "おこなう", meaning: "tổ chức" },
-        { id: "469", kanji: "間違う", hiragana: "まちがう", meaning: "bị sai" },
-        { id: "470", kanji: "間違える", hiragana: "まちがえる", meaning: "làm sai" },
-        { id: "471", kanji: "許す", hiragana: "ゆるす", meaning: "tha thứ, cho phép" },
-        { id: "472", kanji: "慣れる", hiragana: "なれる", meaning: "quen" },
-        { id: "473", kanji: "慣らす", hiragana: "ならす", meaning: "khởi động" },
-        { id: "474", kanji: "立つ", hiragana: "たつ", meaning: "đứng" },
-        { id: "475", kanji: "立てる", hiragana: "たてる", meaning: "dựng lên" },
-        { id: "476", kanji: "建つ", hiragana: "たつ", meaning: "được xây" },
-        { id: "477", kanji: "建てる", hiragana: "たてる", meaning: "xây" },
-        { id: "478", kanji: "育つ", hiragana: "そだつ", meaning: "được nuôi dạy" },
-        { id: "479", kanji: "育てる", hiragana: "そだてる", meaning: "nuôi, dạy" },
-        { id: "480", kanji: "生える", hiragana: "はえる", meaning: "mọc" },
-        { id: "481", kanji: "生やす", hiragana: "はやす", meaning: "nuôi(râu)" },
-        { id: "482", kanji: "汚れる", hiragana: "よごれる", meaning: "bị bẩn" },
-        { id: "483", kanji: "汚す", hiragana: "よごす", meaning: "làm bẩn" },
-        { id: "484", kanji: "壊れる", hiragana: "こわれる", meaning: "bị hỏng" },
-        { id: "485", kanji: "壊す", hiragana: "こわす", meaning: "làm hỏng" },
-        { id: "486", kanji: "割れる", hiragana: "われる", meaning: "bị vỡ" },
-        { id: "487", kanji: "割る", hiragana: "わる", meaning: "làm vỡ" },
-        { id: "488", kanji: "折れる", hiragana: "おれる", meaning: "bị gãy" },
-        { id: "489", kanji: "折る", hiragana: "おる", meaning: "làm gãy" },
-        { id: "490", kanji: "破れる", hiragana: "やぶれる", meaning: "bị rách" },
-        { id: "491", kanji: "破る", hiragana: "やぶる", meaning: "xé rách" },
-        { id: "492", kanji: "曲がる", hiragana: "まがる", meaning: "gập, cong" },
-        { id: "493", kanji: "曲げる", hiragana: "まげる", meaning: "bẻ, uốn" },
-        { id: "494", kanji: "外れる", hiragana: "はずれる", meaning: "bị rời ra" },
-        { id: "495", kanji: "外す", hiragana: "はずす", meaning: "tách ra" },
-        { id: "496", kanji: "揺れる", hiragana: "ゆれる", meaning: "bị rung" },
-        { id: "497", kanji: "揺らす", hiragana: "ゆらす", meaning: "đung đưa" },
-        { id: "498", kanji: "流れる", hiragana: "ながれる", meaning: "chảy" },
-        { id: "499", kanji: "流す", hiragana: "ながす", meaning: "cho chảy" },
-        { id: "500", kanji: "濡れる", hiragana: "ぬれる", meaning: "bị ướt" },
-        { id: "501", kanji: "濡らす", hiragana: "ぬらす", meaning: "làm ướt" },
-        { id: "502", kanji: "迷う", hiragana: "まよう", meaning: "lạc đường" },
-        { id: "503", kanji: "悩む", hiragana: "なやむ", meaning: "băn khoăn" },
-        { id: "504", kanji: "慌てる", hiragana: "あわてる", meaning: "vội vàng" },
-        { id: "505", kanji: "覚める", hiragana: "さめる", meaning: "thức dậy" },
-        { id: "506", kanji: "覚ます", hiragana: "さます", meaning: "mở mắt, tỉnh" },
-        { id: "507", kanji: "眠る", hiragana: "ねむる", meaning: "ngủ" },
-        { id: "508", kanji: "祈る", hiragana: "いのる", meaning: "cầu, khấn" },
-        { id: "509", kanji: "祝う", hiragana: "いわう", meaning: "ăn mừng" },
-        { id: "510", kanji: "感じる", hiragana: "かんじる", meaning: "cảm thấy" },
-        { id: "511", kanji: "クラスメート", hiragana: "", meaning: "bạn cùng lớp" },
-        { id: "512", kanji: "グループ", hiragana: "", meaning: "nhóm" },
-        { id: "513", kanji: "チーム", hiragana: "", meaning: "đội" },
-        { id: "514", kanji: "プロフェッショナル", hiragana: "", meaning: "chuyên nghiệp" },
-        { id: "515", kanji: "アマチュア", hiragana: "", meaning: "nghiệp dư" },
-        { id: "516", kanji: "トレーニング", hiragana: "", meaning: "đào tạo" },
-        { id: "517", kanji: "マッサージ", hiragana: "", meaning: "mát xa" },
-        { id: "518", kanji: "アドバイス", hiragana: "", meaning: "khuyên" },
-        { id: "519", kanji: "アイデア・アイディア", hiragana: "", meaning: "ý tưởng" },
-        { id: "520", kanji: "トップ", hiragana: "", meaning: "top" },
-        { id: "521", kanji: "スピード", hiragana: "", meaning: "tốc độ" },
-        { id: "522", kanji: "ラッシュ", hiragana: "", meaning: "đông đúc" },
-        { id: "523", kanji: "バイク", hiragana: "", meaning: "xe máy" },
-        { id: "524", kanji: "ヘルメット", hiragana: "", meaning: "mũ bảo hiểm" },
-        { id: "525", kanji: "コンタクトレンズ", hiragana: "", meaning: "kính áp tròng" },
-        { id: "526", kanji: "ガラス", hiragana: "", meaning: "kính" },
-        { id: "527", kanji: "プラスチック", hiragana: "", meaning: "nhựa" },
-        { id: "528", kanji: "ベランダ", hiragana: "", meaning: "ban công" },
-        { id: "529", kanji: "ペット", hiragana: "", meaning: "thú cưng" },
-        { id: "530", kanji: "ベンチ", hiragana: "", meaning: "ghế bành" },
-        { id: "531", kanji: "デザイン", hiragana: "", meaning: "thiết kế" },
-        { id: "532", kanji: "バーゲンセール", hiragana: "", meaning: "sale" },
-        { id: "533", kanji: "パート", hiragana: "", meaning: "làm thêm" },
-        { id: "534", kanji: "コンビニエンスストア", hiragana: "", meaning: "cửa hàng tiện ích" },
-        { id: "535", kanji: "レジ", hiragana: "", meaning: "máy tính tiền" },
-        { id: "536", kanji: "レシート", hiragana: "", meaning: "hóa đơn" },
-        { id: "537", kanji: "インスタント", hiragana: "", meaning: "ăn liền" },
-        { id: "538", kanji: "ファストフード", hiragana: "", meaning: "đồ ăn nhanh" },
-        { id: "539", kanji: "フルーツ", hiragana: "", meaning: "trái cây" },
-        { id: "540", kanji: "デザート", hiragana: "", meaning: "tráng miệng" },
-        { id: "541", kanji: "インターネット", hiragana: "", meaning: "internet" },
-        { id: "542", kanji: "チャイム", hiragana: "", meaning: "chuông" },
-        { id: "543", kanji: "アナウンス", hiragana: "", meaning: "thông báo" },
-        { id: "544", kanji: "メッセージ", hiragana: "", meaning: "tin nhắn" },
-        { id: "545", kanji: "パンフレット", hiragana: "", meaning: "tờ rơi" },
-        { id: "546", kanji: "カード", hiragana: "", meaning: "card" },
-        { id: "547", kanji: "インタビュー", hiragana: "", meaning: "phỏng vấn" },
-        { id: "548", kanji: "アンケート", hiragana: "", meaning: "tờ câu hỏi" },
-        { id: "549", kanji: "データ", hiragana: "", meaning: "dữ liệu" },
-        { id: "550", kanji: "パーセント", hiragana: "", meaning: "phần trăm" },
-        { id: "551", kanji: "濃い", hiragana: "こい", meaning: "đậm, đặc" },
-        { id: "552", kanji: "薄い", hiragana: "うすい", meaning: "mỏng, nhạt" },
-        { id: "553", kanji: "酸っぱい", hiragana: "すっぱい", meaning: "chua" },
-        { id: "554", kanji: "臭い", hiragana: "くさい", meaning: "thối" },
-        { id: "555", kanji: "おかしい", hiragana: "おかしい", meaning: "lạ" },
-        { id: "556", kanji: "かっこいい", hiragana: "かっこいい", meaning: "bảnh bao" },
-        { id: "557", kanji: "うまい", hiragana: "うまい", meaning: "ngon" },
-        { id: "558", kanji: "親しい", hiragana: "したしい", meaning: "thân thiết" },
-        { id: "559", kanji: "詳しい", hiragana: "くわしい", meaning: "chi tiết" },
-        { id: "560", kanji: "細かい", hiragana: "こまかい", meaning: "tiểu tiết, bé" },
-        { id: "561", kanji: "浅い", hiragana: "あさい", meaning: "nông" },
-        { id: "562", kanji: "固い・硬い", hiragana: "かたい", meaning: "cứng" },
-        { id: "563", kanji: "ぬるい", hiragana: "ぬるい", meaning: "nguội" },
-        { id: "564", kanji: "まぶしい", hiragana: "まぶしい", meaning: "chói" },
-        { id: "565", kanji: "蒸し暑い", hiragana: "むしあつい", meaning: "nóng ẩm" },
-        { id: "566", kanji: "清潔な", hiragana: "せいけつな", meaning: "sạch" },
-        { id: "567", kanji: "新鮮な", hiragana: "しんせんな", meaning: "tươi" },
-        { id: "568", kanji: "豊かな", hiragana: "ゆたかな", meaning: "giàu có" },
-        { id: "569", kanji: "立派な", hiragana: "りっぱな", meaning: "siêu" },
-        { id: "570", kanji: "正確な", hiragana: "せいかくな", meaning: "chính xác" },
-        { id: "571", kanji: "確かな", hiragana: "たしかな", meaning: "đích thực" },
-        { id: "572", kanji: "重要な", hiragana: "じゅうような", meaning: "quan trọng" },
-        { id: "573", kanji: "必要な", hiragana: "ひつような", meaning: "cần thiết" },
-        { id: "574", kanji: "もったいない", hiragana: "もったいない", meaning: "lãng phí" },
-        { id: "575", kanji: "すごい", hiragana: "すごい", meaning: "ghê, siêu" },
-        { id: "576", kanji: "ひどい", hiragana: "ひどい", meaning: "tồi" },
-        { id: "577", kanji: "激しい", hiragana: "はげしい", meaning: "mãnh liệt" },
-        { id: "578", kanji: "そっくりな", hiragana: "そっくりな", meaning: "giống" },
-        { id: "579", kanji: "急な", hiragana: "きゅうな", meaning: "đột nhiên" },
-        { id: "580", kanji: "敵とな", hiragana: "てきとな", meaning: "phù hợp" },
-        { id: "581", kanji: "特別な", hiragana: "とくべつな", meaning: "đặc biệt" },
-        { id: "582", kanji: "完全な", hiragana: "かんぜんな", meaning: "toàn bộ" },
-        { id: "583", kanji: "盛んな", hiragana: "さかんな", meaning: "thịnh vượng" },
-        { id: "584", kanji: "様々な", hiragana: "さまざまな", meaning: "đa đạng" },
-        { id: "585", kanji: "可能な", hiragana: "かのうな", meaning: "khả thi" },
-        { id: "586", kanji: "不可能な", hiragana: "ふかのうな", meaning: "bất khả thi" },
-        { id: "587", kanji: "基本的な", hiragana: "きほんてきな", meaning: "cơ bản" },
-        { id: "588", kanji: "国際的な", hiragana: "こくさいてきな", meaning: "tính quốc tế" },
-        { id: "589", kanji: "ばらばらな", hiragana: "ばらばらな", meaning: "tung tóe, chia rẽ" },
-        { id: "590", kanji: "ぼろぼろな", hiragana: "ぼろぼろな", meaning: "rách nát, te tua" },
-        { id: "591", kanji: "非常に", hiragana: "ひじょうに", meaning: "rất" },
-        { id: "592", kanji: "大変に", hiragana: "たいへんに", meaning: "khủng khiếp, rất nhiều" },
-        { id: "593", kanji: "ほとんど", hiragana: "ほとんど", meaning: "gần như hoàn toàn" },
-        { id: "594", kanji: "大体", hiragana: "だいたい", meaning: "phần lớn, trong khoảng" },
-        { id: "595", kanji: "かなり", hiragana: "かなり", meaning: "khá" },
-        { id: "596", kanji: "ずいぶん", hiragana: "ずいぶん", meaning: "đáng kể" },
-        { id: "597", kanji: "けっこう", hiragana: "けっこう", meaning: "rất" },
-        { id: "598", kanji: "大分", hiragana: "ずいぶん", meaning: "chủ yếu, khá" },
-        { id: "599", kanji: "もっと", hiragana: "もっと", meaning: "hơn, nữa" },
-        { id: "600", kanji: "しっかり", hiragana: "しっかり", meaning: "toàn bộ" },
-        { id: "601", kanji: "いっぱい", hiragana: "いっぱい", meaning: "đầy" },
-        { id: "602", kanji: "ぎりぎり", hiragana: "ぎりぎり", meaning: "gần, sát nút" },
-        { id: "603", kanji: "ぴったり", hiragana: "ぴったり", meaning: "vừa vặn, đúng" },
-        { id: "604", kanji: "たいてい", hiragana: "たいてい", meaning: "đại thể, thường" },
-        { id: "605", kanji: "同時に", hiragana: "どうじに", meaning: "cùng lúc" },
-        { id: "606", kanji: "前もって", hiragana: "まえもって", meaning: "trước" },
-        { id: "607", kanji: "すぐに", hiragana: "すぐに", meaning: "ngay lập tức" },
-        { id: "608", kanji: "もうすぐ", hiragana: "もうすぐ", meaning: "sắp" },
-        { id: "609", kanji: "突然", hiragana: "とつぜん", meaning: "đột nhiên" },
-        { id: "610", kanji: "あっという間に", hiragana: "あっというまに", meaning: "loáng một cái" },
-        { id: "611", kanji: "いつの間にか", hiragana: "いつのまにか", meaning: "lúc nào không biết" },
-        { id: "612", kanji: "しばらく", hiragana: "しばらく", meaning: "một chút" },
-        { id: "613", kanji: "ずっと", hiragana: "ずっと", meaning: "suốt, nhiều" },
-        { id: "614", kanji: "相変わらず", hiragana: "あいかわらず", meaning: "như mọi khi" },
-        { id: "615", kanji: "次々に", hiragana: "つぎつぎに", meaning: "lần lượt" },
-        { id: "616", kanji: "どんどん", hiragana: "どんどん", meaning: "dần dần" },
-        { id: "617", kanji: "ますます", hiragana: "ますます", meaning: "càng ngày càng" },
-        { id: "618", kanji: "やっと", hiragana: "やっと", meaning: "cuối cùng, vừa đủ" },
-        { id: "619", kanji: "とうとう", hiragana: "とうとう", meaning: "sau cùng, cuối cùng, sau tất cả" },
-        { id: "620", kanji: "ついに", hiragana: "ついに", meaning: "cuối cùng, sau cùng" },
-        { id: "621", kanji: "もちろん", hiragana: "もちろん", meaning: "tất nhiên" },
-        { id: "622", kanji: "やはり", hiragana: "やはり", meaning: "như dự tính" },
-        { id: "623", kanji: "きっと", hiragana: "きっと", meaning: "nhất định" },
-        { id: "624", kanji: "ぜひ", hiragana: "ぜひ", meaning: "bằng mọi giá, rất (muốn)" },
-        { id: "625", kanji: "なるべく", hiragana: "なるべく", meaning: "càng nhiều càng tốt" },
-        { id: "626", kanji: "案外", hiragana: "あんがい", meaning: "không ngờ đến" },
-        { id: "627", kanji: "もしかすると・もしかしたら・もしかして", hiragana: "", meaning: "có lẽ" },
-        { id: "628", kanji: "まさか", hiragana: "まさか", meaning: "không thể ngờ, không" },
-        { id: "629", kanji: "うっかり", hiragana: "うっかり", meaning: "ngơ ngác, không để ý" },
-        { id: "630", kanji: "つい", hiragana: "つい", meaning: "vô ý, buột" },
-        { id: "631", kanji: "思わず", hiragana: "おもわず", meaning: "không ngờ đến" },
-        { id: "632", kanji: "ほっと", hiragana: "ほっと", meaning: "yên tâm" },
-        { id: "633", kanji: "いらいら", hiragana: "いらいら", meaning: "khó chịu, nóng giận" },
-        { id: "634", kanji: "のんびり", hiragana: "のんびり", meaning: "tận hưởng" },
-        { id: "635", kanji: "実は", hiragana: "じつは", meaning: "thực tế là" },
-        { id: "636", kanji: "読書", hiragana: "どくしょ", meaning: "đọc viết" },
-        { id: "637", kanji: "演奏", hiragana: "えんそう", meaning: "biểu diễn" },
-        { id: "638", kanji: "芸術", hiragana: "げいじゅつ", meaning: "nghệ thuật" },
-        { id: "639", kanji: "検査", hiragana: "けんさ", meaning: "kiểm tra" },
-        { id: "640", kanji: "血液", hiragana: "けつえき", meaning: "máu" },
-        { id: "641", kanji: "治療", hiragana: "ちりょう", meaning: "trị liệu" },
-        { id: "642", kanji: "症状", hiragana: "しょうじょう", meaning: "triệu chứng" },
-        { id: "643", kanji: "予防", hiragana: "よぼう", meaning: "dự phòng" },
-        { id: "644", kanji: "栄養", hiragana: "えいよう", meaning: "dinh dưỡng" },
-        { id: "645", kanji: "手術", hiragana: "しゅじゅつ", meaning: "phẫu thuật" },
-        { id: "646", kanji: "死亡", hiragana: "しぼう", meaning: "tử vong" },
-        { id: "647", kanji: "命", hiragana: "いのち", meaning: "sinh mạng" },
-        { id: "648", kanji: "一生", hiragana: "いっしょう", meaning: "suốt đời" },
-        { id: "649", kanji: "誤解", hiragana: "ごかい", meaning: "hiểu nhầm" },
-        { id: "650", kanji: "後悔", hiragana: "こうかい", meaning: "hối hận" },
-        { id: "651", kanji: "訳", hiragana: "わけ", meaning: "lý do" },
-        { id: "652", kanji: "態度", hiragana: "たいど", meaning: "thái độ" },
-        { id: "653", kanji: "癖", hiragana: "くせ", meaning: "thói quen" },
-        { id: "654", kanji: "礼儀", hiragana: "れいぎ", meaning: "lễ nghĩa" },
-        { id: "655", kanji: "文句", hiragana: "もんく", meaning: "phàn nàn" },
-        { id: "656", kanji: "表情", hiragana: "ひょうじょう", meaning: "biểu lộ, biểu thị" },
-        { id: "657", kanji: "鏡面", hiragana: "ひょうめん", meaning: "bề mặt" },
-        { id: "658", kanji: "禁煙", hiragana: "きんえん", meaning: "cấm hút thuốc" },
-        { id: "659", kanji: "禁止", hiragana: "きんし", meaning: "cấm" },
-        { id: "660", kanji: "完成", hiragana: "かんせい", meaning: "hoàn thành" },
-        { id: "661", kanji: "課題", hiragana: "かだい", meaning: "chủ đề" },
-        { id: "662", kanji: "例外", hiragana: "れいがい", meaning: "ngoại lệ" },
-        { id: "663", kanji: "基本", hiragana: "きほん", meaning: "cơ bản" },
-        { id: "664", kanji: "記録", hiragana: "きろく", meaning: "ghi âm" },
-        { id: "665", kanji: "状態", hiragana: "じょうたい", meaning: "trạng thái" },
-        { id: "666", kanji: "出来事", hiragana: "できごと", meaning: "sự kiện" },
-        { id: "667", kanji: "場面", hiragana: "ばめん", meaning: "khung cảnh, tình huống, hiện trường" },
-        { id: "668", kanji: "機会", hiragana: "きかい", meaning: "cơ hội" },
-        { id: "669", kanji: "距離", hiragana: "きょり", meaning: "khoảng cách" },
-        { id: "670", kanji: "提案", hiragana: "ていあん", meaning: "đề xuất" },
-        { id: "671", kanji: "やり取り", hiragana: "やりとり", meaning: "trao đổi, làm việc" },
-        { id: "672", kanji: "知識", hiragana: "ちしき", meaning: "kiến thức" },
-        { id: "673", kanji: "実力", hiragana: "じつりょく", meaning: "thực lực" },
-        { id: "674", kanji: "手段", hiragana: "しゅだん", meaning: "cách thức" },
-        { id: "675", kanji: "代表", hiragana: "だいひょう", meaning: "đại biểu" },
-        { id: "676", kanji: "影響", hiragana: "えいきょう", meaning: "ảnh hưởng" },
-        { id: "677", kanji: "効果", hiragana: "こうか", meaning: "hiệu quả" },
-        { id: "678", kanji: "印象", hiragana: "いんしょう", meaning: "ấn tượng" },
-        { id: "679", kanji: "印", hiragana: "しるし", meaning: "dấu, dấu hiệu" },
-        { id: "680", kanji: "合図", hiragana: "あいず", meaning: "ám hiệu" },
-        { id: "681", kanji: "共通", hiragana: "きょうつう", meaning: "chung" },
-        { id: "682", kanji: "協調", hiragana: "きょうちょう", meaning: "nhấn mạnh" },
-        { id: "683", kanji: "省略", hiragana: "しょうりゃく", meaning: "lược bớt" },
-        { id: "684", kanji: "挑戦", hiragana: "ちょうせん", meaning: "thử thách" },
-        { id: "685", kanji: "やる気", hiragana: "やるき", meaning: "động lực" },
-        { id: "686", kanji: "勇気", hiragana: "ゆうき", meaning: "dũng cảm, dũng khí" },
-        { id: "687", kanji: "資格", hiragana: "しかく", meaning: "bằng cấp, tư cách" },
-        { id: "688", kanji: "申請", hiragana: "しんせい", meaning: "đăng ký, ứng tuyển" },
-        { id: "689", kanji: "本人", hiragana: "ほんにん", meaning: "người được nói đến" },
-        { id: "690", kanji: "契約", hiragana: "けいやく", meaning: "hợp đồng" },
-        { id: "691", kanji: "証明", hiragana: "しょうめい", meaning: "chứng minh, bằng chứng" },
-        { id: "692", kanji: "変更", hiragana: "へんこう", meaning: "thay đổi" },
-        { id: "693", kanji: "保存", hiragana: "ほぞん", meaning: "bảo tồn" },
-        { id: "694", kanji: "保護", hiragana: "ほご", meaning: "bảo vệ" },
-        { id: "695", kanji: "環境", hiragana: "かんきょう", meaning: "môi trường" },
-        { id: "696", kanji: "資源", hiragana: "しげん", meaning: "tài nguyên" },
-        { id: "697", kanji: "不足", hiragana: "ふそく", meaning: "thiếu" },
-        { id: "698", kanji: "平均", hiragana: "へいきん", meaning: "trung bình" },
-        { id: "699", kanji: "割合", hiragana: "わりあい", meaning: "tỷ lệ" },
-        { id: "700", kanji: "商売", hiragana: "しょうばい", meaning: "kinh doanh, buôn bán" },
-        { id: "701", kanji: "商品", hiragana: "しょうひん", meaning: "sản phẩm" },
-        { id: "702", kanji: "質", hiragana: "しつ", meaning: "chất lượng" },
-        { id: "703", kanji: "型", hiragana: "かた", meaning: "mẫu" },
-        { id: "704", kanji: "生産", hiragana: "せいさん", meaning: "sản xuất" },
-        { id: "705", kanji: "消費", hiragana: "しょうひ", meaning: "tiêu dùng, tiêu thụ" },
-        { id: "706", kanji: "物価", hiragana: "ぶっか", meaning: "giá cả, vật giá" },
-        { id: "707", kanji: "倒産", hiragana: "とうさん", meaning: "phá sản" },
-        { id: "708", kanji: "携帯", hiragana: "けいたい", meaning: "mang theo" },
-        { id: "709", kanji: "現代", hiragana: "げんだい", meaning: "hiện tại" },
-        { id: "710", kanji: "世紀", hiragana: "せいき", meaning: "thế kỷ" },
-        { id: "711", kanji: "文化", hiragana: "ぶんか", meaning: "văn hóa" },
-        { id: "712", kanji: "都市", hiragana: "とし", meaning: "thành phố" },
-        { id: "713", kanji: "地方", hiragana: "ちほう", meaning: "địa phương" },
-        { id: "714", kanji: "戦争", hiragana: "せんそう", meaning: "chiến tranh" },
-        { id: "715", kanji: "平和", hiragana: "へいわ", meaning: "hòa bình" },
-        { id: "716", kanji: "上る", hiragana: "のぼる", meaning: "leo lên" },
-        { id: "717", kanji: "下る", hiragana: "くだる", meaning: "đi xuống" },
-        { id: "718", kanji: "進む", hiragana: "すすむ", meaning: "tiến lên" },
-        { id: "719", kanji: "進める", hiragana: "すすめる", meaning: "làm cho tiến lên" },
-        { id: "720", kanji: "通る", hiragana: "とおる", meaning: "thông qua, được chấp nhận, đi qua" },
-        { id: "721", kanji: "通す", hiragana: "とおす", meaning: "xuyên qua, thông qua" },
-        { id: "722", kanji: "超える・越える", hiragana: "こえる", meaning: "vượt qua" },
-        { id: "723", kanji: "過ぎる", hiragana: "すぎる", meaning: "quá, đi qua" },
-        { id: "724", kanji: "過ごす", hiragana: "すごす", meaning: "sử dụng(thời gian)" },
-        { id: "725", kanji: "移る", hiragana: "うつる", meaning: "được chuyển" },
-        { id: "726", kanji: "移す", hiragana: "うつす", meaning: "chuyển" },
-        { id: "727", kanji: "連れる", hiragana: "つれる", meaning: "dẫn đi" },
-        { id: "728", kanji: "寄る", hiragana: "よる", meaning: "ghé sát, lại gần" },
-        { id: "729", kanji: "寄せる", hiragana: "よせる", meaning: "ghé vào" },
-        { id: "730", kanji: "与える", hiragana: "あたえる", meaning: "trao, cung cấp" },
-        { id: "731", kanji: "得る", hiragana: "える", meaning: "đạt được, có được" },
-        { id: "732", kanji: "向く", hiragana: "むく", meaning: "hướng, đối diện" },
-        { id: "733", kanji: "向ける", hiragana: "むける", meaning: "hướng đến, quay" },
-        { id: "734", kanji: "勧める", hiragana: "すすめる", meaning: "rủ, mời, gợi ý" },
-        { id: "735", kanji: "薦める", hiragana: "すすめる", meaning: "giới thiệu, gợi ý" },
-        { id: "736", kanji: "任せる", hiragana: "まかせる", meaning: "tin tưởng, để cho ai đó làm gì" },
-        { id: "737", kanji: "守る", hiragana: "まもる", meaning: "giữ, tuân thủ, bảo vệ" },
-        { id: "738", kanji: "争う", hiragana: "あらそう", meaning: "gây gổ, tranh giành" },
-        { id: "739", kanji: "臨む", hiragana: "のぞむ", meaning: "ước" },
-        { id: "740", kanji: "信じる", hiragana: "しんじる", meaning: "tin tưởng" },
-        { id: "741", kanji: "通じる", hiragana: "つうじる", meaning: "hiểu, thông qua" },
-        { id: "742", kanji: "飽きる", hiragana: "あきる", meaning: "chán, ngấy" },
-        { id: "743", kanji: "思いつく", hiragana: "おもいつく", meaning: "nghĩ về" },
-        { id: "744", kanji: "思いやる", hiragana: "おもいやる", meaning: "quan tâm, thông cảm" },
-        { id: "745", kanji: "熱中する", hiragana: "ねっちゅうする", meaning: "nghiện" },
-        { id: "746", kanji: "暮らす", hiragana: "くらす", meaning: "sống" },
-        { id: "747", kanji: "巻く", hiragana: "まく", meaning: "quấn, quàng" },
-        { id: "748", kanji: "結ぶ", hiragana: "むすぶ", meaning: "buộc, cột, nối" },
-        { id: "749", kanji: "済む", hiragana: "すむ", meaning: "kết thúc" },
-        { id: "750", kanji: "済ませる・済ます", hiragana: "すませる・済ます", meaning: "hoàn tất" },
-        { id: "751", kanji: "出来る", hiragana: "できる", meaning: "có thể, được xây dựng" },
-        { id: "752", kanji: "切れる", hiragana: "きれる", meaning: "cắt, hết hạn" },
-        { id: "753", kanji: "切らす", hiragana: "きらす", meaning: "hết" },
-        { id: "754", kanji: "伝わる", hiragana: "つたわる", meaning: "được truyền đi, được trải ra, được giới thiệu" },
-        { id: "755", kanji: "伝える", hiragana: "つたえる", meaning: "truyền đi, giới thiệu" },
-        { id: "756", kanji: "続く", hiragana: "つづく", meaning: "tiếp tục, xảy ra, lặp lại, theo sau" },
-        { id: "757", kanji: "続ける", hiragana: "つづける", meaning: "tiếp tục, xảy ra liên tiếp" },
-        { id: "758", kanji: "つながる", hiragana: "つながる", meaning: "được kết nối, được mở rộng, thông qua" },
-        { id: "759", kanji: "つなぐ", hiragana: "つなぐ", meaning: "kết nối, tham gia" },
-        { id: "760", kanji: "つなげる", hiragana: "つなげる", meaning: "kết nối, làm chặt thêm" },
-        { id: "761", kanji: "伸びる", hiragana: "のびる", meaning: "lớn lên, tăng thêm, dài ra" },
-        { id: "762", kanji: "伸ばす", hiragana: "のばす", meaning: "nuôi dài, căng ra" },
-        { id: "763", kanji: "延びる", hiragana: "のびる", meaning: "bị trì hoãn, bị kéo dài" },
-        { id: "764", kanji: "延ばす", hiragana: "のばす", meaning: "trì hoãn, kéo dài" },
-        { id: "765", kanji: "重なる", hiragana: "かさなる", meaning: "xung đột, xếp chồng" },
-        { id: "766", kanji: "重ねる", hiragana: "かさねる", meaning: "chồng lên, tích trữ" },
-        { id: "767", kanji: "広がる", hiragana: "ひろがる", meaning: "mở rộng, bùng phát, lan tràn, trải dài" },
-        { id: "768", kanji: "広げる", hiragana: "ひろげる", meaning: "mở thêm, mở rộng, nới rộng, mở ra" },
-        { id: "769", kanji: "載る", hiragana: "のる", meaning: "vừa, được công bố" },
-        { id: "770", kanji: "載せる", hiragana: "のせる", meaning: "cho vào, cho lên, công bố" },
-        { id: "771", kanji: "そろう", hiragana: "そろう", meaning: "thu thập, được thu thập" },
-        { id: "772", kanji: "そろえる", hiragana: "そろえる", meaning: "gom lại, chuẩn bị sẵn sàng" },
-        { id: "773", kanji: "まとまる", hiragana: "まとまる", meaning: "được thống nhất, được tổ chức, được sắp xếp" },
-        { id: "774", kanji: "まとめる", hiragana: "まとめる", meaning: "tập hợp, sàng lọc, hợp nhất, tổ chức" },
-        { id: "775", kanji: "付く", hiragana: "つく", meaning: "dính, gắn, đạt được, đi cùng với" },
-        { id: "776", kanji: "付ける", hiragana: "つける", meaning: "gắn, thêm vào" },
-        { id: "777", kanji: "たまる", hiragana: "たまる", meaning: "được tiết kiệm" },
-        { id: "778", kanji: "ためる", hiragana: "ためる", meaning: "tiết kiệm" },
-        { id: "779", kanji: "交じる・混じる", hiragana: "まじる", meaning: "giao vào, lẫn vào" },
-        { id: "780", kanji: "交ざる・混ざる", hiragana: "まざる", meaning: "được trộn lẫn" },
-        { id: "781", kanji: "交ぜる・混ぜる", hiragana: "まぜる", meaning: "trộn vào" },
-        { id: "782", kanji: "解ける・溶ける", hiragana: "とける", meaning: "được giải quyết, nóng chảy" },
-        { id: "783", kanji: "解く・溶く", hiragana: "とく", meaning: "giải quyết, nóng chảy" },
-        { id: "784", kanji: "含む", hiragana: "ふくむ", meaning: "chứa, bao gồm" },
-        { id: "785", kanji: "含める", hiragana: "ふくめる", meaning: "bao gồm" },
-        { id: "786", kanji: "抜ける", hiragana: "ぬける", meaning: "tháo, tuột" },
-        { id: "787", kanji: "抜く", hiragana: "ぬく", meaning: "lấy ra" },
-        { id: "788", kanji: "現れる", hiragana: "あらわれる", meaning: "xuất hiện, được thẻ hiện" },
-        { id: "789", kanji: "現す", hiragana: "あらわす", meaning: "xuất hiện, hiện ra" },
-        { id: "790", kanji: "表れる", hiragana: "あらわれる", meaning: "biểu hiện (trên mặt)" },
-        { id: "791", kanji: "表す", hiragana: "あらわす", meaning: "biểu thị, biểu lộ, đại diện" },
-        { id: "792", kanji: "散る", hiragana: "ちる", meaning: "bị tàn, rụng" },
-        { id: "793", kanji: "散らす", hiragana: "ちらす", meaning: "tàn" },
-        { id: "794", kanji: "明ける", hiragana: "あける", meaning: "(đêm) đến, (năm mới) bắt đầu, (mùa mưa) kết thúc" },
-        { id: "795", kanji: "差す", hiragana: "さす", meaning: "(mặt trời) chiếu sáng, mở (ô), nhỏ (thuốc mắt)" },
-        { id: "796", kanji: "パートナ", hiragana: "パートナー", meaning: "đối tác" },
-        { id: "797", kanji: "リーダー", hiragana: "リーダー", meaning: "lãnh đạo" },
-        { id: "798", kanji: "ボランティア", hiragana: "ボランティア", meaning: "tình nguyện" },
-        { id: "799", kanji: "コミュニケーション", hiragana: "コミュニケーション", meaning: "giao tiếp" },
-        { id: "800", kanji: "ユーモア", hiragana: "ユーモア", meaning: "hài hước, đùa" },
-        { id: "801", kanji: "ショック", hiragana: "ショック", meaning: "shock, choáng" },
-        { id: "802", kanji: "ストレス", hiragana: "ストレス", meaning: "căng thẳng, stress" },
-        { id: "803", kanji: "バランス", hiragana: "バランス", meaning: "cân bằng" },
-        { id: "804", kanji: "レベル", hiragana: "レベル", meaning: "trình độ, level" },
-        { id: "805", kanji: "アップ", hiragana: "アップ", meaning: "tăng lên" },
-        { id: "806", kanji: "ダウン", hiragana: "ダウン", meaning: "giảm xuống" },
-        { id: "807", kanji: "プラス", hiragana: "プラス", meaning: "phép cộng, tác động tích cực" },
-        { id: "808", kanji: "マイナス", hiragana: "マイナス", meaning: "phép trừ, tác động tiêu cực" },
-        { id: "809", kanji: "イメージ", hiragana: "イメージ", meaning: "hình ảnh" },
-        { id: "810", kanji: "コンテスト", hiragana: "コンテスト", meaning: "cuộc thi" },
-        { id: "811", kanji: "マスコミ", hiragana: "マスコミ", meaning: "thông tin truyền thông" },
-        { id: "812", kanji: "プライバシー", hiragana: "プライバシー", meaning: "cá nhân, riêng tư" },
-        { id: "813", kanji: "オフィス", hiragana: "オフィス", meaning: "văn phòng" },
-        { id: "814", kanji: "ルール", hiragana: "ルール", meaning: "luật lệ" },
-        { id: "815", kanji: "マナー", hiragana: "マナー", meaning: "kiểu, thói" },
-        { id: "816", kanji: "ミス", hiragana: "ミス", meaning: "lỗi" },
-        { id: "817", kanji: "スケジュール", hiragana: "スケジュール", meaning: "lịch, kế hoạch" },
-        { id: "818", kanji: "タイトル", hiragana: "タイトル", meaning: "tiêu đề" },
-        { id: "819", kanji: "テーマ", hiragana: "テーマ", meaning: "chủ đề" },
-        { id: "820", kanji: "ストーリー", hiragana: "ストーリー", meaning: "câu chuyện" },
-        { id: "821", kanji: "ヒット", hiragana: "ヒット", meaning: "nổi tiếng" },
-        { id: "822", kanji: "ブランド", hiragana: "ブランド", meaning: "nhãn hiệu" },
-        { id: "823", kanji: "レンタル", hiragana: "レンタル", meaning: "thuê" },
-        { id: "824", kanji: "リサイクル", hiragana: "リサイクル", meaning: "tái chế" },
-        { id: "825", kanji: "ラベル", hiragana: "ラベル", meaning: "nhãn" },
-        { id: "826", kanji: "タイプ", hiragana: "タイプ", meaning: "loại" },
-        { id: "827", kanji: "スタイル", hiragana: "スタイル", meaning: "kiểu dáng" },
-        { id: "828", kanji: "セット", hiragana: "セット", meaning: "cài đặt, set" },
-        { id: "829", kanji: "ウイルス", hiragana: "ウイルス", meaning: "virus" },
-        { id: "830", kanji: "ロボット", hiragana: "ロボット", meaning: "robot" },
-        { id: "831", kanji: "エネルギー", hiragana: "エネルギー", meaning: "năng lượng" },
-        { id: "832", kanji: "デジタル", hiragana: "デジタル", meaning: "kỹ thuật số" },
-        { id: "833", kanji: "マイク", hiragana: "マイク", meaning: "microphone, ghi âm" },
-        { id: "834", kanji: "ブレーキ", hiragana: "ブレーキ", meaning: "phanh" },
-        { id: "835", kanji: "ペンキ", hiragana: "ペンキ", meaning: "sơn" },
-        { id: "836", kanji: "炊ける", hiragana: "たける", meaning: "được nấu" },
-        { id: "837", kanji: "炊く", hiragana: "たく", meaning: "nấu" },
-        { id: "838", kanji: "煮える", hiragana: "にえる", meaning: "được nấu, được ninh" },
-        { id: "839", kanji: "煮る", hiragana: "にる", meaning: "nấu, ninh, luộc" },
-        { id: "840", kanji: "炒める", hiragana: "いためる", meaning: "rán" },
-        { id: "841", kanji: "焼ける", hiragana: "やける", meaning: "được nấu, được nướng" },
-        { id: "842", kanji: "焼く", hiragana: "やく", meaning: "nướng, nấu" },
-        { id: "843", kanji: "ゆでる", hiragana: "ゆでる", meaning: "luộc" },
-        { id: "844", kanji: "揚げる", hiragana: "あげる", meaning: "rán ngập" },
-        { id: "845", kanji: "蒸す", hiragana: "むす", meaning: "hấp" },
-        { id: "846", kanji: "ぐっすり", hiragana: "ぐっすり", meaning: "say" },
-        { id: "847", kanji: "きちんと", hiragana: "きちんと", meaning: "ngay ngắn" },
-        { id: "848", kanji: "しっかり", hiragana: "しっかり", meaning: "kiên quyết, chắc chắn, đáng tin cậy" },
-        { id: "849", kanji: "はっきり", hiragana: "はっきり", meaning: "rõ ràng" },
-        { id: "850", kanji: "じっと", hiragana: "じっと", meaning: "kiên nhẫn, chăm chú, chằm chằm" },
-        { id: "851", kanji: "そっと", hiragana: "そっと", meaning: "nhẹ nhàng, yên lặng" },
-        { id: "852", kanji: "別々に", hiragana: "べつべつに", meaning: "riêng biệt" },
-        { id: "853", kanji: "それぞれ", hiragana: "それぞれ", meaning: "lần lượt, tương ứng" },
-        { id: "854", kanji: "互いに", hiragana: "たがいに", meaning: "lẫn nhau" },
-        { id: "855", kanji: "直接", hiragana: "ちょくせつ", meaning: "trực tiếp" },
-        { id: "856", kanji: "本当に", hiragana: "ほんとうに", meaning: "thật lòng, kỳ thực" },
-        { id: "857", kanji: "必ず", hiragana: "かならず", meaning: "chắc chắn" },
-        { id: "858", kanji: "絶対に", hiragana: "ぜったいに", meaning: "chắc chắn rồi" },
-        { id: "859", kanji: "特に", hiragana: "とくに", meaning: "đặc biệt là" },
-        { id: "860", kanji: "ただ", hiragana: "ただ", meaning: "chỉ" },
-        { id: "861", kanji: "少なくとも", hiragana: "すくなくとも", meaning: "ít nhất" },
-        { id: "862", kanji: "決して", hiragana: "けっして", meaning: "không bao giờ" },
-        { id: "863", kanji: "少しも", hiragana: "すこしも", meaning: "một chút" },
-        { id: "864", kanji: "ちっとも", hiragana: "ちっとも", meaning: "(không) tí gì" },
-        { id: "865", kanji: "全く", hiragana: "まったく", meaning: "hoàn toàn (không)" },
-        { id: "866", kanji: "とても", hiragana: "とても", meaning: "rất" },
-        { id: "867", kanji: "どんなに", hiragana: "どんなに", meaning: "thế nào, bao nhiêu" },
-        { id: "868", kanji: "どうしても", hiragana: "どうしても", meaning: "kiểu gì cũng" },
-        { id: "869", kanji: "まるで", hiragana: "まるで", meaning: "như là" },
-        { id: "870", kanji: "一体", hiragana: "いったい", meaning: "cái quái gì" },
-        { id: "871", kanji: "別に", hiragana: "べつに", meaning: "(không) có gì" },
-        { id: "872", kanji: "たった", hiragana: "たった", meaning: "chỉ" },
-        { id: "873", kanji: "ほんの", hiragana: "ほんの", meaning: "một chút" },
-        { id: "874", kanji: "それで", hiragana: "それで", meaning: "thế thì" },
-        { id: "875", kanji: "そこで", hiragana: "そこで", meaning: "tiếp theo" },
-        { id: "876", kanji: "そのうえ", hiragana: "そのうえ", meaning: "hơn nữa" },
-        { id: "877", kanji: "また", hiragana: "また", meaning: "nữa" },
-        { id: "878", kanji: "または", hiragana: "または", meaning: "hoặc" },
-        { id: "879", kanji: "それとも", hiragana: "それとも", meaning: "hoặc" },
-        { id: "880", kanji: "つまり", hiragana: "つまり", meaning: "nói cách khác" },
+    <div class="col-guide" id="colGuide"></div>
 
+    <div class="paste-wrapper">
+      <textarea id="pasteArea" placeholder=" " spellcheck="false"
+        onpaste="setTimeout(processInput, 50)"
+        oninput="processInput()"></textarea>
+      <div class="paste-hint" id="pasteHint">
+        <div class="icon">📋</div>
+        <div class="title">Paste dữ liệu từ Excel vào đây</div>
+        <div class="sub">Ctrl+V sau khi copy từ Excel</div>
+      </div>
+    </div>
 
+    <div class="paste-toolbar">
+      <button class="btn btn-secondary" onclick="clearPaste()">🗑 Xóa</button>
+      <button class="btn btn-secondary" onclick="addMoreSheet()">➕ Thêm sheet khác</button>
+      <button class="btn btn-primary" id="parseBtn" onclick="parseAndShow()" style="display:none">
+        Xem preview →
+      </button>
+    </div>
 
-            // Add more vocabulary items here
-        ];
-        
-        let currentWordIndex = -1;
-        let currentFace = 1;
-        let usedIndices = new Set();
-        
-        // DOM elements
-        const flashcardContainer = document.getElementById('flashcardContainer');
-        const flashcard = document.getElementById('flashcard');
-        const randomBtn = document.getElementById('randomBtn');
-        const noDataMessage = document.getElementById('noDataMessage');
-        const currentWordIndexEl = document.getElementById('currentWordIndex');
-        const remainingWordsEl = document.getElementById('remainingWords');
-        const face1 = document.getElementById('face1');
-        const face2 = document.getElementById('face2');
-        const kanjiEl = document.getElementById('kanji');
-        const hiraganaEl = document.getElementById('hiragana');
-        const meaningEl = document.getElementById('meaning');
+    <!-- Extra sheets -->
+    <div id="extraSheets"></div>
+  </div>
 
-        function showRandomWord() {
-            if (vocabularyData.length === 0) return;
-            
-            if (usedIndices.size >= vocabularyData.length) {
-                usedIndices.clear();
-            }
-            
-            let randomIndex;
-            do {
-                randomIndex = Math.floor(Math.random() * vocabularyData.length);
-            } while (usedIndices.has(randomIndex) && usedIndices.size < vocabularyData.length);
-            
-            usedIndices.add(randomIndex);
-            currentWordIndex = randomIndex;
-            currentFace = 1;
-            
-            const word = vocabularyData[currentWordIndex];
-            kanjiEl.textContent = word.kanji;
-            hiraganaEl.textContent = word.hiragana;
-            meaningEl.textContent = word.meaning;
-            
-            flashcard.classList.remove('rotate-0', 'rotate-180');
-            flashcard.classList.add('rotate-0');
-            
-            face1.style.display = 'flex';
-            face2.style.display = 'none';
-            
-            updateStats();
-        }
-        
-        function updateStats() {
-            if (vocabularyData.length === 0) return;
-            currentWordIndexEl.textContent = `Word: ${currentWordIndex + 1}`;
-            remainingWordsEl.textContent = `Remaining: ${220 - usedIndices.size}`;
-        }
+  <!-- PREVIEW SECTION -->
+  <div id="previewSection">
+    <div class="preview-header">
+      <div class="section-title" style="margin:0">Preview <span>Labels</span></div>
+      <div class="count-badge" id="countBadge">0 labels</div>
+      <div style="margin-left:auto;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="goBack()">← Sửa lại</button>
+        <button class="btn btn-print" onclick="printLabels()">🖨 In Labels</button>
+      </div>
+    </div>
 
-        // Add flashcard click handler
-        flashcard.addEventListener('click', () => {
-            if (currentFace === 1) {
-                face1.style.display = 'none';
-                face2.style.display = 'flex';
-                currentFace = 2;
-            } else {
-                face1.style.display = 'flex';
-                face2.style.display = 'none';
-                currentFace = 1;
-            }
+    <div class="error-box" id="errorBox"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>TRACKING ID</th>
+            <th>ORDER ID</th>
+            <th>DATE</th>
+            <th>PRODUCT</th>
+          </tr>
+        </thead>
+        <tbody id="previewBody"></tbody>
+      </table>
+    </div>
+
+    <button class="btn btn-print" onclick="printLabels()" style="width:100%;justify-content:center;padding:14px;font-size:15px;">
+      🖨 In tất cả Labels ({{ count }})
+    </button>
+  </div>
+</main>
+
+<!-- PRINT AREA (hidden on screen) -->
+<div id="printArea"></div>
+
+<script>
+// ===== CONFIG =====
+const MONTH_MAP = {
+  "Jan":"01","Feb":"02","Mar":"03","Apr":"04","May":"05","Jun":"06",
+  "Jul":"07","Aug":"08","Sep":"09","Oct":"10","Nov":"11","Dec":"12"
+};
+
+const COLUMN_MAPPING = {
+  SDR:  ["date","product","tracking_part","location","status1","in_prod_flag","empty1","empty2","empty3","order_id"],
+  BATT: ["date","location","product","tracking_part","status1","in_prod_flag","empty1","empty2","order_id"],
+  BFG:  ["date","product","tracking_part","status1","location","in_prod_flag","empty1","empty2","order_id"],
+};
+
+let currentSheet = "SDR";
+let allParsedRows = []; // final grouped label data
+let extraSheetCount = 0;
+
+// ===== COLUMN GUIDE =====
+function renderColGuide(sheet) {
+  const cols = COLUMN_MAPPING[sheet];
+  const guide = document.getElementById("colGuide");
+  guide.innerHTML = cols.map((c, i) => {
+    const isKey = ["tracking_part","location","order_id","date","product"].includes(c);
+    return `<div class="col-tag ${isKey ? 'req' : ''}"><span class="idx">col ${i+1}</span>${c}</div>`;
+  }).join("");
+}
+
+function selectSheet(el) {
+  document.querySelectorAll(".sheet-tab").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  currentSheet = el.dataset.sheet;
+  renderColGuide(currentSheet);
+}
+
+renderColGuide("SDR");
+
+// ===== PARSE PASTE =====
+function parseTabText(text, sheetType) {
+  const rows = [];
+  const cols = COLUMN_MAPPING[sheetType];
+  const lines = text.trim().split("\n");
+
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const cells = line.split("\t");
+    const obj = {};
+    cols.forEach((col, i) => { obj[col] = (cells[i] || "").trim(); });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function convertDate(str) {
+  try {
+    const [day, monthAbbr] = str.trim().split("-");
+    const month = MONTH_MAP[monthAbbr];
+    return month ? `${day.padStart(2,"0")}/${month}` : str;
+  } catch { return str; }
+}
+
+function processInput() {
+  const val = document.getElementById("pasteArea").value.trim();
+  const hint = document.getElementById("pasteHint");
+  hint.style.opacity = val ? "0" : "1";
+
+  const hasData = val.length > 0 || hasExtraData();
+  document.getElementById("parseBtn").style.display = hasData ? "inline-flex" : "none";
+}
+
+function clearPaste() {
+  document.getElementById("pasteArea").value = "";
+  processInput();
+}
+
+function hasExtraData() {
+  const extras = document.querySelectorAll(".extra-paste");
+  for (const e of extras) { if (e.value.trim()) return true; }
+  return false;
+}
+
+// ===== EXTRA SHEETS =====
+function addMoreSheet() {
+  extraSheetCount++;
+  const id = `extra_${extraSheetCount}`;
+  const container = document.getElementById("extraSheets");
+
+  const div = document.createElement("div");
+  div.style.cssText = "margin-top:24px;";
+  div.innerHTML = `
+    <div class="tab-label" style="margin-top:16px">SHEET BỔ SUNG #${extraSheetCount}:</div>
+    <div class="sheet-tabs" id="tabs_${id}">
+      <div class="sheet-tab active" data-sheet="SDR" onclick="selectExtraSheet(this,'${id}')">SDR</div>
+      <div class="sheet-tab" data-sheet="BATT" onclick="selectExtraSheet(this,'${id}')">BATT</div>
+      <div class="sheet-tab" data-sheet="BFG" onclick="selectExtraSheet(this,'${id}')">BFG</div>
+    </div>
+    <div class="paste-wrapper">
+      <textarea class="extra-paste" id="${id}" data-sheet="SDR" placeholder=" " spellcheck="false"
+        style="width:100%;min-height:150px;background:var(--surface);border:2px dashed var(--border);
+               border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;
+               font-size:13px;padding:20px;resize:vertical;outline:none;caret-color:var(--accent);"
+        oninput="processInput()" onpaste="setTimeout(processInput,50)"></textarea>
+    </div>
+    <button class="btn btn-danger" onclick="this.parentElement.remove();processInput()">✕ Xóa sheet này</button>
+  `;
+  container.appendChild(div);
+}
+
+function selectExtraSheet(el, id) {
+  el.closest(`#tabs_${id}`).querySelectorAll(".sheet-tab").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  document.getElementById(id).dataset.sheet = el.dataset.sheet;
+}
+
+// ===== MAIN PARSE & SHOW =====
+function parseAndShow() {
+  // Collect all raw rows
+  let allRaw = [];
+
+  const mainText = document.getElementById("pasteArea").value.trim();
+  if (mainText) {
+    allRaw = allRaw.concat(parseTabText(mainText, currentSheet));
+  }
+
+  document.querySelectorAll(".extra-paste").forEach(el => {
+    const text = el.value.trim();
+    const sheet = el.dataset.sheet || "SDR";
+    if (text) allRaw = allRaw.concat(parseTabText(text, sheet));
+  });
+
+  if (!allRaw.length) { alert("Không có dữ liệu!"); return; }
+
+  // Filter valid VN tracking
+  let filtered = allRaw.filter(r =>
+    r.location === "VN" &&
+    r.tracking_part &&
+    r.tracking_part.startsWith("YT")
+  );
+
+  // Convert date
+  filtered.forEach(r => { r.date = convertDate(r.date); });
+
+  // Validate
+  const errors = [];
+
+  // Check 1: 1 tracking → nhiều order
+  const trackingOrders = {};
+  filtered.forEach(r => {
+    if (!trackingOrders[r.tracking_part]) trackingOrders[r.tracking_part] = new Set();
+    trackingOrders[r.tracking_part].add(r.order_id);
+  });
+  Object.entries(trackingOrders).forEach(([trk, orders]) => {
+    if (orders.size > 1)
+      errors.push(`Tracking <b>${trk}</b> có ${orders.size} order_id khác nhau: ${[...orders].join(", ")}`);
+  });
+
+  // Check 2: 1 order → nhiều tracking
+  const orderTrackings = {};
+  filtered.forEach(r => {
+    if (!orderTrackings[r.order_id]) orderTrackings[r.order_id] = new Set();
+    orderTrackings[r.order_id].add(r.tracking_part);
+  });
+  Object.entries(orderTrackings).forEach(([order, trackings]) => {
+    if (trackings.size > 1)
+      errors.push(`Order <b>${order}</b> có ${trackings.size} tracking khác nhau → sẽ tạo nhiều label!`);
+  });
+
+  // Group by tracking_id
+  const grouped = {};
+  filtered.forEach(r => {
+    const trk = r.tracking_part;
+    if (!grouped[trk]) {
+      grouped[trk] = { tracking_id: trk, order_id: r.order_id, date: r.date, products: [] };
+    }
+    if (r.product) grouped[trk].products.push(r.product);
+  });
+
+  allParsedRows = Object.values(grouped).map(g => ({
+    ...g,
+    product: [...new Set(g.products)].join("\n")
+  }));
+
+  // Sort by order number
+  allParsedRows.sort((a, b) => {
+    const na = parseInt((a.order_id.match(/\d+/) || [0])[0]);
+    const nb = parseInt((b.order_id.match(/\d+/) || [0])[0]);
+    return na - nb;
+  });
+
+  showPreview(allParsedRows, errors);
+}
+
+function showPreview(rows, errors) {
+  // Steps
+  setStep(2);
+
+  // Error box
+  const errorBox = document.getElementById("errorBox");
+  if (errors.length) {
+    errorBox.style.display = "block";
+    errorBox.innerHTML = `⚠️ Phát hiện ${errors.length} cảnh báo:<ul>${errors.map(e => `<li>${e}</li>`).join("")}</ul>`;
+  } else {
+    errorBox.style.display = "none";
+  }
+
+  // Count
+  document.getElementById("countBadge").textContent = `${rows.length} labels`;
+
+  // Table
+  const tbody = document.getElementById("previewBody");
+  tbody.innerHTML = rows.map((r, i) => `
+    <tr>
+      <td class="td-date">${i+1}</td>
+      <td class="td-tracking">${r.tracking_id}</td>
+      <td class="td-order">${r.order_id}</td>
+      <td class="td-date">${r.date}</td>
+      <td class="td-product">${r.product.replace(/\n/g,"<br>")}</td>
+    </tr>
+  `).join("");
+
+  // Update print button text
+  document.querySelector("#previewSection .btn-print:last-child").textContent =
+    `🖨 In tất cả ${rows.length} Labels`;
+
+  document.getElementById("pasteSection").style.display = "none";
+  document.getElementById("previewSection").style.display = "block";
+}
+
+function goBack() {
+  document.getElementById("pasteSection").style.display = "block";
+  document.getElementById("previewSection").style.display = "none";
+  setStep(1);
+}
+
+function resetAll() {
+  document.getElementById("pasteArea").value = "";
+  document.getElementById("extraSheets").innerHTML = "";
+  extraSheetCount = 0;
+  allParsedRows = [];
+  goBack();
+  processInput();
+}
+
+// ===== STEPS =====
+function setStep(n) {
+  [1,2,3].forEach(i => {
+    const el = document.getElementById(`step${i}`);
+    el.classList.remove("active","done");
+    if (i < n) el.classList.add("done");
+    else if (i === n) el.classList.add("active");
+  });
+}
+
+// ===== PRINT =====
+function printLabels() {
+  if (!allParsedRows.length) return;
+  setStep(3);
+
+  const printArea = document.getElementById("printArea");
+  printArea.innerHTML = "";
+
+  allParsedRows.forEach((data, index) => {
+    const page = document.createElement("div");
+    page.className = "label-page";
+    page.id = `lp_${index}`;
+
+    const barcodeId = `bc_${index}`;
+    const qrId = `qr_${index}`;
+    const orderLine = data.order_id
+      ? `<div class="order-id-line">Order ID: ${data.order_id}</div>` : "";
+
+    page.innerHTML = `
+      <div class="label-date">${data.date}</div>
+      <div class="code-container">
+        <div class="barcode-container"><svg id="${barcodeId}"></svg></div>
+        <div class="qr-container"><div id="${qrId}"></div></div>
+      </div>
+      <div class="tracking-number">Tracking: ${data.tracking_id}</div>
+      ${orderLine}
+      <div class="invoice-box">
+        <div class="invoice-title">PRODUCT</div>
+        <div class="invoice-product">${data.product}</div>
+      </div>
+    `;
+    printArea.appendChild(page);
+  });
+
+  // Render barcodes & QR then print
+  requestAnimationFrame(() => {
+    allParsedRows.forEach((data, i) => {
+      try {
+        JsBarcode(`#bc_${i}`, data.tracking_id, {
+          format: "CODE128", width: 2, height: 70,
+          displayValue: false, margin: 0, flat: true, background: "#ffffff"
         });
+      } catch(e) {}
 
-        // Add random button click handler
-        randomBtn.addEventListener('click', showRandomWord);
-
-        // Initialize
-        window.addEventListener('DOMContentLoaded', () => {
-            randomBtn.disabled = false;
-            range1Btn.disabled = false;
-            range2Btn.disabled = false;
-            range3Btn.disabled = false;
-            range4Btn.disabled = false;
-            flashcardContainer.classList.remove('hidden');
-            noDataMessage.textContent = `Loaded ${vocabularyData.length} words successfully.`;
-            showRandomWord();
+      try {
+        const qrEl = document.getElementById(`qr_${i}`);
+        qrEl.innerHTML = "";
+        new QRCode(qrEl, {
+          text: data.tracking_id, width: 70, height: 70,
+          colorDark: "#000000", colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
         });
+      } catch(e) {}
+    });
 
-        face2.style.display = 'none';
-
-        // Dark mode handler
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
-        }
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-            if (event.matches) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        });
-
-        function showRandomWordInRange(start, end) {
-            if (vocabularyData.length === 0) return;
-            
-            // Adjust indices to 0-based
-            start = start - 1;
-            end = end - 1;
-            
-            // Create array of available indices in range that haven't been used
-            let availableIndices = [];
-            for (let i = start; i <= end; i++) {
-                if (!usedIndices.has(i)) {
-                    availableIndices.push(i);
-                }
-            }
-            
-            // If all words in range have been used, reset used indices for this range
-            if (availableIndices.length === 0) {
-                usedIndices.clear();
-                for (let i = start; i <= end; i++) {
-                    availableIndices.push(i);
-                }
-            }
-            
-            // Pick random index from available indices
-            const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
-            
-            usedIndices.add(randomIndex);
-            currentWordIndex = randomIndex;
-            currentFace = 1;
-            
-            const word = vocabularyData[currentWordIndex];
-            kanjiEl.textContent = word.kanji;
-            hiraganaEl.textContent = word.hiragana;
-            meaningEl.textContent = word.meaning;
-            
-            flashcard.classList.remove('rotate-0', 'rotate-180');
-            flashcard.classList.add('rotate-0');
-            
-            face1.style.display = 'flex';
-            face2.style.display = 'none';
-            
-            updateStats();
-        }
-
-        const range1Btn = document.getElementById('range1Btn');
-        const range2Btn = document.getElementById('range2Btn');
-        const range3Btn = document.getElementById('range3Btn');
-        const range4Btn = document.getElementById('range4Btn');
-
-        range1Btn.addEventListener('click', () => showRandomWordInRange(1, 220));
-        range2Btn.addEventListener('click', () => showRandomWordInRange(221, 440));
-        range3Btn.addEventListener('click', () => showRandomWordInRange(441, 660));
-        range4Btn.addEventListener('click', () => showRandomWordInRange(661, 880));
-
-    </script>
+    setTimeout(() => { window.print(); }, 1500);
+  });
+}
+</script>
 </body>
 </html>
